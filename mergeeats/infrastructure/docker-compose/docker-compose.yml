@@ -1,0 +1,260 @@
+version: '3.8'
+
+services:
+  # MongoDB for all services
+  mongodb:
+    image: mongo:7.0
+    container_name: mergeeats-mongodb
+    restart: always
+    ports:
+      - "27017:27017"
+    environment:
+      MONGO_INITDB_ROOT_USERNAME: admin
+      MONGO_INITDB_ROOT_PASSWORD: password123
+    volumes:
+      - mongodb_data:/data/db
+    networks:
+      - mergeeats-network
+
+  # Apache Kafka
+  zookeeper:
+    image: confluentinc/cp-zookeeper:7.4.0
+    container_name: mergeeats-zookeeper
+    environment:
+      ZOOKEEPER_CLIENT_PORT: 2181
+      ZOOKEEPER_TICK_TIME: 2000
+    networks:
+      - mergeeats-network
+
+  kafka:
+    image: confluentinc/cp-kafka:7.4.0
+    container_name: mergeeats-kafka
+    depends_on:
+      - zookeeper
+    ports:
+      - "9092:9092"
+    environment:
+      KAFKA_BROKER_ID: 1
+      KAFKA_ZOOKEEPER_CONNECT: zookeeper:2181
+      KAFKA_ADVERTISED_LISTENERS: PLAINTEXT://localhost:9092
+      KAFKA_OFFSETS_TOPIC_REPLICATION_FACTOR: 1
+      KAFKA_AUTO_CREATE_TOPICS_ENABLE: true
+    networks:
+      - mergeeats-network
+
+  # Redis for caching
+  redis:
+    image: redis:7.2-alpine
+    container_name: mergeeats-redis
+    restart: always
+    ports:
+      - "6379:6379"
+    command: redis-server --appendonly yes
+    volumes:
+      - redis_data:/data
+    networks:
+      - mergeeats-network
+
+  # Config Server
+  config-server:
+    build:
+      context: ../../backend/config-server
+      dockerfile: Dockerfile
+    container_name: mergeeats-config-server
+    ports:
+      - "8888:8888"
+    environment:
+      - SPRING_PROFILES_ACTIVE=docker
+    networks:
+      - mergeeats-network
+    healthcheck:
+      test: ["CMD", "curl", "-f", "http://localhost:8888/actuator/health"]
+      interval: 30s
+      timeout: 10s
+      retries: 5
+
+  # API Gateway
+  api-gateway:
+    build:
+      context: ../../backend/api-gateway
+      dockerfile: Dockerfile
+    container_name: mergeeats-api-gateway
+    ports:
+      - "8080:8080"
+    environment:
+      - SPRING_PROFILES_ACTIVE=docker
+      - CONFIG_SERVER_URL=http://config-server:8888
+    depends_on:
+      config-server:
+        condition: service_healthy
+    networks:
+      - mergeeats-network
+
+  # User Service
+  user-service:
+    build:
+      context: ../../backend/user-service
+      dockerfile: Dockerfile
+    container_name: mergeeats-user-service
+    ports:
+      - "8081:8081"
+    environment:
+      - SPRING_PROFILES_ACTIVE=docker
+      - MONGODB_URI=mongodb://admin:password123@mongodb:27017/mergeeats-users?authSource=admin
+      - KAFKA_BOOTSTRAP_SERVERS=kafka:9092
+    depends_on:
+      - mongodb
+      - kafka
+      - config-server
+    networks:
+      - mergeeats-network
+
+  # Order Service
+  order-service:
+    build:
+      context: ../../backend/order-service
+      dockerfile: Dockerfile
+    container_name: mergeeats-order-service
+    ports:
+      - "8082:8082"
+    environment:
+      - SPRING_PROFILES_ACTIVE=docker
+      - MONGODB_URI=mongodb://admin:password123@mongodb:27017/mergeeats-orders?authSource=admin
+      - KAFKA_BOOTSTRAP_SERVERS=kafka:9092
+    depends_on:
+      - mongodb
+      - kafka
+      - config-server
+    networks:
+      - mergeeats-network
+
+  # Restaurant Service
+  restaurant-service:
+    build:
+      context: ../../backend/restaurant-service
+      dockerfile: Dockerfile
+    container_name: mergeeats-restaurant-service
+    ports:
+      - "8083:8083"
+    environment:
+      - SPRING_PROFILES_ACTIVE=docker
+      - MONGODB_URI=mongodb://admin:password123@mongodb:27017/mergeeats-restaurants?authSource=admin
+      - KAFKA_BOOTSTRAP_SERVERS=kafka:9092
+    depends_on:
+      - mongodb
+      - kafka
+      - config-server
+    networks:
+      - mergeeats-network
+
+  # Delivery Service
+  delivery-service:
+    build:
+      context: ../../backend/delivery-service
+      dockerfile: Dockerfile
+    container_name: mergeeats-delivery-service
+    ports:
+      - "8084:8084"
+    environment:
+      - SPRING_PROFILES_ACTIVE=docker
+      - MONGODB_URI=mongodb://admin:password123@mongodb:27017/mergeeats-delivery?authSource=admin
+      - KAFKA_BOOTSTRAP_SERVERS=kafka:9092
+      - REDIS_URL=redis://redis:6379
+    depends_on:
+      - mongodb
+      - kafka
+      - redis
+      - config-server
+    networks:
+      - mergeeats-network
+
+  # Payment Service
+  payment-service:
+    build:
+      context: ../../backend/payment-service
+      dockerfile: Dockerfile
+    container_name: mergeeats-payment-service
+    ports:
+      - "8085:8085"
+    environment:
+      - SPRING_PROFILES_ACTIVE=docker
+      - MONGODB_URI=mongodb://admin:password123@mongodb:27017/mergeeats-payments?authSource=admin
+      - KAFKA_BOOTSTRAP_SERVERS=kafka:9092
+    depends_on:
+      - mongodb
+      - kafka
+      - config-server
+    networks:
+      - mergeeats-network
+
+  # Notification Service
+  notification-service:
+    build:
+      context: ../../backend/notification-service
+      dockerfile: Dockerfile
+    container_name: mergeeats-notification-service
+    ports:
+      - "8086:8086"
+    environment:
+      - SPRING_PROFILES_ACTIVE=docker
+      - MONGODB_URI=mongodb://admin:password123@mongodb:27017/mergeeats-notifications?authSource=admin
+      - KAFKA_BOOTSTRAP_SERVERS=kafka:9092
+    depends_on:
+      - mongodb
+      - kafka
+      - config-server
+    networks:
+      - mergeeats-network
+
+  # Merchant Web App (React.js)
+  merchant-web-app:
+    build:
+      context: ../../frontend/merchant-web-app
+      dockerfile: Dockerfile
+    container_name: mergeeats-merchant-web
+    ports:
+      - "3000:3000"
+    environment:
+      - REACT_APP_API_BASE_URL=http://localhost:8080
+    depends_on:
+      - api-gateway
+    networks:
+      - mergeeats-network
+
+  # Customer Mobile App (React Native - Web version for demo)
+  customer-web-app:
+    build:
+      context: ../../frontend/customer-mobile-app
+      dockerfile: Dockerfile.web
+    container_name: mergeeats-customer-web
+    ports:
+      - "3001:3000"
+    environment:
+      - REACT_APP_API_BASE_URL=http://localhost:8080
+    depends_on:
+      - api-gateway
+    networks:
+      - mergeeats-network
+
+  # Delivery Partner App (React Native - Web version for demo)
+  delivery-partner-web-app:
+    build:
+      context: ../../frontend/delivery-partner-app
+      dockerfile: Dockerfile.web
+    container_name: mergeeats-delivery-web
+    ports:
+      - "3002:3000"
+    environment:
+      - REACT_APP_API_BASE_URL=http://localhost:8080
+    depends_on:
+      - api-gateway
+    networks:
+      - mergeeats-network
+
+volumes:
+  mongodb_data:
+  redis_data:
+
+networks:
+  mergeeats-network:
+    driver: bridge
