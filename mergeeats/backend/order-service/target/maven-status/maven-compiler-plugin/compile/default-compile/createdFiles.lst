@@ -1,6 +1,6 @@
+com/mergeeats/orderservice/service/OrderService.class
+com/mergeeats/orderservice/controller/OrderController.class
 com/mergeeats/orderservice/service/OrderMergingService.class
 com/mergeeats/orderservice/OrderServiceApplication.class
 com/mergeeats/orderservice/repository/OrderRepository.class
 com/mergeeats/orderservice/dto/CreateOrderRequest.class
-com/mergeeats/orderservice/service/OrderService.class
-com/mergeeats/orderservice/controller/OrderController.class
