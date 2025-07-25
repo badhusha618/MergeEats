@@ -1,0 +1,6 @@
+/workspace/mergeeats/backend/order-service/src/main/java/com/mergeeats/orderservice/repository/OrderRepository.java
+/workspace/mergeeats/backend/order-service/src/main/java/com/mergeeats/orderservice/service/OrderMergingService.java
+/workspace/mergeeats/backend/order-service/src/main/java/com/mergeeats/orderservice/dto/CreateOrderRequest.java
+/workspace/mergeeats/backend/order-service/src/main/java/com/mergeeats/orderservice/OrderServiceApplication.java
+/workspace/mergeeats/backend/order-service/src/main/java/com/mergeeats/orderservice/service/OrderService.java
+/workspace/mergeeats/backend/order-service/src/main/java/com/mergeeats/orderservice/controller/OrderController.java
