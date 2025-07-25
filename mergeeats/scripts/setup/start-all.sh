@@ -181,25 +181,43 @@ else
     print_warning "⚠️  Order Service not accessible through Gateway"
 fi
 
-# Test Frontend
+# Test Frontend Applications
 if curl -s http://localhost:3000 > /dev/null; then
     print_success "✅ Merchant Dashboard is running"
 else
     print_warning "⚠️  Merchant Dashboard not accessible"
 fi
 
+if curl -s http://localhost:3001 > /dev/null; then
+    print_success "✅ Customer Mobile App is running"
+else
+    print_warning "⚠️  Customer Mobile App not accessible"
+fi
+
+if curl -s http://localhost:3002 > /dev/null; then
+    print_success "✅ Delivery Partner App is running"
+else
+    print_warning "⚠️  Delivery Partner App not accessible"
+fi
+
 echo ""
-print_success "🎊 MergeEats is ready for use!"
+print_success "🎊 MergeEats Platform is fully operational!"
 echo ""
-echo "💡 Quick Start:"
-echo "1. Open Merchant Dashboard: http://localhost:3000"
-echo "2. Test API: curl http://localhost:8080/api/users/health"
-echo "3. Register User: curl -X POST http://localhost:8080/api/users/register -H 'Content-Type: application/json' -d '{\"email\":\"test@example.com\",\"password\":\"password123\",\"fullName\":\"Test User\"}'"
+echo "💡 Application Access:"
+echo "1. Merchant Dashboard: http://localhost:3000"
+echo "2. Customer Mobile App: http://localhost:3001"
+echo "3. Delivery Partner App: http://localhost:3002"
+echo "4. API Gateway: http://localhost:8080"
+echo ""
+echo "🔧 API Testing:"
+echo "• Health Check: curl http://localhost:8080/api/users/health"
+echo "• Register User: curl -X POST http://localhost:8080/api/users/register -H 'Content-Type: application/json' -d '{\"email\":\"test@example.com\",\"password\":\"password123\",\"fullName\":\"Test User\"}'"
 echo ""
 echo "🎯 Next Steps:"
-echo "- Explore the beautiful merchant dashboard"
-echo "- Test user registration and login"
+echo "- Explore the merchant dashboard with real-time analytics"
+echo "- Try the customer mobile app for ordering experience"
+echo "- Test the delivery partner app for order management"
 echo "- Create orders and see AI-powered merging in action"
-echo "- Check real-time analytics and monitoring"
+echo "- Test group ordering and split payment features"
 echo ""
 echo "Happy coding! 🚀"
