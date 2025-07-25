@@ -1,16 +1,13 @@
 package com.mergeeats.common.models;
 
 import com.mergeeats.common.enums.PaymentStatus;
-import com.mergeeats.common.enums.PaymentMethod;
-import org.springframework.data.annotation.CreatedDate;
 import org.springframework.data.annotation.Id;
+import org.springframework.data.annotation.CreatedDate;
 import org.springframework.data.annotation.LastModifiedDate;
 import org.springframework.data.mongodb.core.mapping.Document;
 import org.springframework.data.mongodb.core.index.Indexed;
-
 import jakarta.validation.constraints.*;
 import java.time.LocalDateTime;
-import java.util.List;
 import java.util.Map;
 
 @Document(collection = "payments")
@@ -27,22 +24,53 @@ public class Payment {
     @Indexed
     private String userId;
 
-    @NotNull(message = "Payment method is required")
-    private PaymentMethod paymentMethod;
-
     @NotNull(message = "Amount is required")
     @DecimalMin(value = "0.01", message = "Amount must be greater than 0")
     private Double amount;
 
-    @NotNull(message = "Status is required")
+    @NotNull(message = "Payment method is required")
+    private PaymentMethod paymentMethod;
+
+    @NotNull(message = "Payment status is required")
     private PaymentStatus status = PaymentStatus.PENDING;
 
-    private String transactionId; // External payment gateway transaction ID
+    @NotNull(message = "Payment type is required")
+    private PaymentType paymentType;
 
-    private String gatewayPaymentId; // Stripe/Razorpay payment ID
+    private String gatewayTransactionId;
 
-    private String gatewayOrderId; // Gateway order ID
+    private String gatewayPaymentId;
 
+    private String gatewayOrderId;
+
+    @NotBlank(message = "Currency is required")
+    private String currency = "INR";
+
+    private String description;
+
+    private Map<String, Object> gatewayResponse;
+
+    private String failureReason;
+
+    private LocalDateTime processedAt;
+
+    private LocalDateTime refundedAt;
+
+    @DecimalMin(value = "0.0", message = "Refund amount cannot be negative")
+    private Double refundAmount = 0.0;
+
+    private String refundTransactionId;
+
+    private String refundReason;
+
+    // Split payment details for group orders
+    private Boolean isSplitPayment = false;
+
+    private String groupOrderId;
+
+    private Map<String, Double> splitDetails; // userId -> amount
+
+    // Fee breakdown
     @DecimalMin(value = "0.0", message = "Platform fee cannot be negative")
     private Double platformFee = 0.0;
 
@@ -52,45 +80,15 @@ public class Payment {
     @DecimalMin(value = "0.0", message = "Tax amount cannot be negative")
     private Double taxAmount = 0.0;
 
-    @DecimalMin(value = "0.0", message = "Discount amount cannot be negative")
-    private Double discountAmount = 0.0;
-
     @DecimalMin(value = "0.0", message = "Net amount cannot be negative")
-    private Double netAmount;
+    private Double netAmount = 0.0;
 
-    private String currency = "INR";
-
-    private String description;
-
-    private String failureReason;
-
-    private String refundReason;
-
-    @DecimalMin(value = "0.0", message = "Refunded amount cannot be negative")
-    private Double refundedAmount = 0.0;
-
-    private LocalDateTime refundedAt;
-
-    private String refundTransactionId;
-
-    // For group orders - split payment details
-    private Boolean isGroupPayment = false;
-    
-    private String groupOrderId;
-    
-    private List<SplitPayment> splitPayments;
-
-    // Gateway specific data
-    private Map<String, Object> gatewayMetadata;
-
-    // Webhook data
-    private Map<String, Object> webhookData;
-
-    private LocalDateTime processedAt;
-
-    private LocalDateTime failedAt;
-
+    // Retry mechanism
+    @Min(value = 0, message = "Retry count cannot be negative")
     private Integer retryCount = 0;
+
+    @Min(value = 0, message = "Max retries cannot be negative")
+    private Integer maxRetries = 3;
 
     private LocalDateTime nextRetryAt;
 
@@ -100,90 +98,17 @@ public class Payment {
     @LastModifiedDate
     private LocalDateTime updatedAt;
 
-    // Inner class for split payments
-    public static class SplitPayment {
-        @NotBlank(message = "User ID is required")
-        private String userId;
-
-        @NotNull(message = "Amount is required")
-        @DecimalMin(value = "0.01", message = "Amount must be greater than 0")
-        private Double amount;
-
-        @NotNull(message = "Status is required")
-        private PaymentStatus status = PaymentStatus.PENDING;
-
-        private String transactionId;
-
-        private String gatewayPaymentId;
-
-        private LocalDateTime processedAt;
-
-        // Constructors
-        public SplitPayment() {}
-
-        public SplitPayment(String userId, Double amount) {
-            this.userId = userId;
-            this.amount = amount;
-        }
-
-        // Getters and Setters
-        public String getUserId() {
-            return userId;
-        }
-
-        public void setUserId(String userId) {
-            this.userId = userId;
-        }
-
-        public Double getAmount() {
-            return amount;
-        }
-
-        public void setAmount(Double amount) {
-            this.amount = amount;
-        }
-
-        public PaymentStatus getStatus() {
-            return status;
-        }
-
-        public void setStatus(PaymentStatus status) {
-            this.status = status;
-        }
-
-        public String getTransactionId() {
-            return transactionId;
-        }
-
-        public void setTransactionId(String transactionId) {
-            this.transactionId = transactionId;
-        }
-
-        public String getGatewayPaymentId() {
-            return gatewayPaymentId;
-        }
-
-        public void setGatewayPaymentId(String gatewayPaymentId) {
-            this.gatewayPaymentId = gatewayPaymentId;
-        }
-
-        public LocalDateTime getProcessedAt() {
-            return processedAt;
-        }
-
-        public void setProcessedAt(LocalDateTime processedAt) {
-            this.processedAt = processedAt;
-        }
-    }
-
     // Constructors
     public Payment() {}
 
-    public Payment(String orderId, String userId, PaymentMethod paymentMethod, Double amount) {
+    public Payment(String orderId, String userId, Double amount, PaymentMethod paymentMethod, 
+                  PaymentType paymentType, String currency) {
         this.orderId = orderId;
         this.userId = userId;
-        this.paymentMethod = paymentMethod;
         this.amount = amount;
+        this.paymentMethod = paymentMethod;
+        this.paymentType = paymentType;
+        this.currency = currency;
         this.netAmount = amount;
     }
 
@@ -212,20 +137,20 @@ public class Payment {
         this.userId = userId;
     }
 
-    public PaymentMethod getPaymentMethod() {
-        return paymentMethod;
-    }
-
-    public void setPaymentMethod(PaymentMethod paymentMethod) {
-        this.paymentMethod = paymentMethod;
-    }
-
     public Double getAmount() {
         return amount;
     }
 
     public void setAmount(Double amount) {
         this.amount = amount;
+    }
+
+    public PaymentMethod getPaymentMethod() {
+        return paymentMethod;
+    }
+
+    public void setPaymentMethod(PaymentMethod paymentMethod) {
+        this.paymentMethod = paymentMethod;
     }
 
     public PaymentStatus getStatus() {
@@ -236,12 +161,20 @@ public class Payment {
         this.status = status;
     }
 
-    public String getTransactionId() {
-        return transactionId;
+    public PaymentType getPaymentType() {
+        return paymentType;
     }
 
-    public void setTransactionId(String transactionId) {
-        this.transactionId = transactionId;
+    public void setPaymentType(PaymentType paymentType) {
+        this.paymentType = paymentType;
+    }
+
+    public String getGatewayTransactionId() {
+        return gatewayTransactionId;
+    }
+
+    public void setGatewayTransactionId(String gatewayTransactionId) {
+        this.gatewayTransactionId = gatewayTransactionId;
     }
 
     public String getGatewayPaymentId() {
@@ -258,6 +191,102 @@ public class Payment {
 
     public void setGatewayOrderId(String gatewayOrderId) {
         this.gatewayOrderId = gatewayOrderId;
+    }
+
+    public String getCurrency() {
+        return currency;
+    }
+
+    public void setCurrency(String currency) {
+        this.currency = currency;
+    }
+
+    public String getDescription() {
+        return description;
+    }
+
+    public void setDescription(String description) {
+        this.description = description;
+    }
+
+    public Map<String, Object> getGatewayResponse() {
+        return gatewayResponse;
+    }
+
+    public void setGatewayResponse(Map<String, Object> gatewayResponse) {
+        this.gatewayResponse = gatewayResponse;
+    }
+
+    public String getFailureReason() {
+        return failureReason;
+    }
+
+    public void setFailureReason(String failureReason) {
+        this.failureReason = failureReason;
+    }
+
+    public LocalDateTime getProcessedAt() {
+        return processedAt;
+    }
+
+    public void setProcessedAt(LocalDateTime processedAt) {
+        this.processedAt = processedAt;
+    }
+
+    public LocalDateTime getRefundedAt() {
+        return refundedAt;
+    }
+
+    public void setRefundedAt(LocalDateTime refundedAt) {
+        this.refundedAt = refundedAt;
+    }
+
+    public Double getRefundAmount() {
+        return refundAmount;
+    }
+
+    public void setRefundAmount(Double refundAmount) {
+        this.refundAmount = refundAmount;
+    }
+
+    public String getRefundTransactionId() {
+        return refundTransactionId;
+    }
+
+    public void setRefundTransactionId(String refundTransactionId) {
+        this.refundTransactionId = refundTransactionId;
+    }
+
+    public String getRefundReason() {
+        return refundReason;
+    }
+
+    public void setRefundReason(String refundReason) {
+        this.refundReason = refundReason;
+    }
+
+    public Boolean getIsSplitPayment() {
+        return isSplitPayment;
+    }
+
+    public void setIsSplitPayment(Boolean isSplitPayment) {
+        this.isSplitPayment = isSplitPayment;
+    }
+
+    public String getGroupOrderId() {
+        return groupOrderId;
+    }
+
+    public void setGroupOrderId(String groupOrderId) {
+        this.groupOrderId = groupOrderId;
+    }
+
+    public Map<String, Double> getSplitDetails() {
+        return splitDetails;
+    }
+
+    public void setSplitDetails(Map<String, Double> splitDetails) {
+        this.splitDetails = splitDetails;
     }
 
     public Double getPlatformFee() {
@@ -284,14 +313,6 @@ public class Payment {
         this.taxAmount = taxAmount;
     }
 
-    public Double getDiscountAmount() {
-        return discountAmount;
-    }
-
-    public void setDiscountAmount(Double discountAmount) {
-        this.discountAmount = discountAmount;
-    }
-
     public Double getNetAmount() {
         return netAmount;
     }
@@ -300,124 +321,20 @@ public class Payment {
         this.netAmount = netAmount;
     }
 
-    public String getCurrency() {
-        return currency;
-    }
-
-    public void setCurrency(String currency) {
-        this.currency = currency;
-    }
-
-    public String getDescription() {
-        return description;
-    }
-
-    public void setDescription(String description) {
-        this.description = description;
-    }
-
-    public String getFailureReason() {
-        return failureReason;
-    }
-
-    public void setFailureReason(String failureReason) {
-        this.failureReason = failureReason;
-    }
-
-    public String getRefundReason() {
-        return refundReason;
-    }
-
-    public void setRefundReason(String refundReason) {
-        this.refundReason = refundReason;
-    }
-
-    public Double getRefundedAmount() {
-        return refundedAmount;
-    }
-
-    public void setRefundedAmount(Double refundedAmount) {
-        this.refundedAmount = refundedAmount;
-    }
-
-    public LocalDateTime getRefundedAt() {
-        return refundedAt;
-    }
-
-    public void setRefundedAt(LocalDateTime refundedAt) {
-        this.refundedAt = refundedAt;
-    }
-
-    public String getRefundTransactionId() {
-        return refundTransactionId;
-    }
-
-    public void setRefundTransactionId(String refundTransactionId) {
-        this.refundTransactionId = refundTransactionId;
-    }
-
-    public Boolean getIsGroupPayment() {
-        return isGroupPayment;
-    }
-
-    public void setIsGroupPayment(Boolean isGroupPayment) {
-        this.isGroupPayment = isGroupPayment;
-    }
-
-    public String getGroupOrderId() {
-        return groupOrderId;
-    }
-
-    public void setGroupOrderId(String groupOrderId) {
-        this.groupOrderId = groupOrderId;
-    }
-
-    public List<SplitPayment> getSplitPayments() {
-        return splitPayments;
-    }
-
-    public void setSplitPayments(List<SplitPayment> splitPayments) {
-        this.splitPayments = splitPayments;
-    }
-
-    public Map<String, Object> getGatewayMetadata() {
-        return gatewayMetadata;
-    }
-
-    public void setGatewayMetadata(Map<String, Object> gatewayMetadata) {
-        this.gatewayMetadata = gatewayMetadata;
-    }
-
-    public Map<String, Object> getWebhookData() {
-        return webhookData;
-    }
-
-    public void setWebhookData(Map<String, Object> webhookData) {
-        this.webhookData = webhookData;
-    }
-
-    public LocalDateTime getProcessedAt() {
-        return processedAt;
-    }
-
-    public void setProcessedAt(LocalDateTime processedAt) {
-        this.processedAt = processedAt;
-    }
-
-    public LocalDateTime getFailedAt() {
-        return failedAt;
-    }
-
-    public void setFailedAt(LocalDateTime failedAt) {
-        this.failedAt = failedAt;
-    }
-
     public Integer getRetryCount() {
         return retryCount;
     }
 
     public void setRetryCount(Integer retryCount) {
         this.retryCount = retryCount;
+    }
+
+    public Integer getMaxRetries() {
+        return maxRetries;
+    }
+
+    public void setMaxRetries(Integer maxRetries) {
+        this.maxRetries = maxRetries;
     }
 
     public LocalDateTime getNextRetryAt() {
@@ -442,5 +359,64 @@ public class Payment {
 
     public void setUpdatedAt(LocalDateTime updatedAt) {
         this.updatedAt = updatedAt;
+    }
+
+    // Helper methods
+    public boolean isCompleted() {
+        return status == PaymentStatus.COMPLETED;
+    }
+
+    public boolean isFailed() {
+        return status == PaymentStatus.FAILED;
+    }
+
+    public boolean canRetry() {
+        return retryCount < maxRetries && (status == PaymentStatus.FAILED || status == PaymentStatus.PENDING);
+    }
+
+    public double getRemainingRefundAmount() {
+        return amount - refundAmount;
+    }
+
+    public boolean isFullyRefunded() {
+        return refundAmount != null && refundAmount.equals(amount);
+    }
+
+    public enum PaymentMethod {
+        CREDIT_CARD("Credit Card"),
+        DEBIT_CARD("Debit Card"),
+        UPI("UPI"),
+        NET_BANKING("Net Banking"),
+        WALLET("Digital Wallet"),
+        CASH_ON_DELIVERY("Cash on Delivery"),
+        BANK_TRANSFER("Bank Transfer");
+
+        private final String displayName;
+
+        PaymentMethod(String displayName) {
+            this.displayName = displayName;
+        }
+
+        public String getDisplayName() {
+            return displayName;
+        }
+    }
+
+    public enum PaymentType {
+        ORDER_PAYMENT("Order Payment"),
+        REFUND("Refund"),
+        PARTIAL_REFUND("Partial Refund"),
+        TIP("Tip"),
+        DELIVERY_FEE("Delivery Fee");
+
+        private final String displayName;
+
+        PaymentType(String displayName) {
+            this.displayName = displayName;
+        }
+
+        public String getDisplayName() {
+            return displayName;
+        }
     }
 }

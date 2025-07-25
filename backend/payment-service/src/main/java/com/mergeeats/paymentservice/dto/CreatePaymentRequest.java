@@ -1,8 +1,9 @@
 package com.mergeeats.paymentservice.dto;
 
-import com.mergeeats.common.models.Address;
-import jakarta.validation.Valid;
+import com.mergeeats.common.models.Payment.PaymentMethod;
+import com.mergeeats.common.models.Payment.PaymentType;
 import jakarta.validation.constraints.*;
+import java.util.Map;
 
 public class CreatePaymentRequest {
 
@@ -16,42 +17,36 @@ public class CreatePaymentRequest {
     @DecimalMin(value = "0.01", message = "Amount must be greater than 0")
     private Double amount;
 
+    @NotNull(message = "Payment method is required")
+    private PaymentMethod paymentMethod;
+
+    @NotNull(message = "Payment type is required")
+    private PaymentType paymentType;
+
     @NotBlank(message = "Currency is required")
     @Size(min = 3, max = 3, message = "Currency must be 3 characters")
-    private String currency = "USD";
+    private String currency = "INR";
 
-    @NotBlank(message = "Payment method is required")
-    @Pattern(regexp = "^(CREDIT_CARD|DEBIT_CARD|DIGITAL_WALLET|CASH|UPI)$", 
-             message = "Payment method must be CREDIT_CARD, DEBIT_CARD, DIGITAL_WALLET, CASH, or UPI")
-    private String paymentMethod;
+    @Size(max = 500, message = "Description cannot exceed 500 characters")
+    private String description;
 
-    private String gatewayProvider; // STRIPE, RAZORPAY, PAYPAL
+    // Split payment details
+    private Boolean isSplitPayment = false;
 
-    private String gatewayPaymentMethodId; // For saved payment methods
+    private String groupOrderId;
 
-    @Email(message = "Invalid email format")
-    private String customerEmail;
-
-    @Pattern(regexp = "^[+]?[1-9]\\d{1,14}$", message = "Invalid phone number format")
-    private String customerPhone;
-
-    @Valid
-    private Address billingAddress;
-
-    // Group payment details
-    private Boolean isGroupPayment = false;
-    private String groupPaymentId;
-    private Double userShareAmount;
-    private Integer totalParticipants;
+    private Map<String, Double> splitDetails; // userId -> amount
 
     // Constructors
     public CreatePaymentRequest() {}
 
-    public CreatePaymentRequest(String orderId, String userId, Double amount, String paymentMethod) {
+    public CreatePaymentRequest(String orderId, String userId, Double amount, 
+                              PaymentMethod paymentMethod, PaymentType paymentType) {
         this.orderId = orderId;
         this.userId = userId;
         this.amount = amount;
         this.paymentMethod = paymentMethod;
+        this.paymentType = paymentType;
     }
 
     // Getters and Setters
@@ -79,6 +74,22 @@ public class CreatePaymentRequest {
         this.amount = amount;
     }
 
+    public PaymentMethod getPaymentMethod() {
+        return paymentMethod;
+    }
+
+    public void setPaymentMethod(PaymentMethod paymentMethod) {
+        this.paymentMethod = paymentMethod;
+    }
+
+    public PaymentType getPaymentType() {
+        return paymentType;
+    }
+
+    public void setPaymentType(PaymentType paymentType) {
+        this.paymentType = paymentType;
+    }
+
     public String getCurrency() {
         return currency;
     }
@@ -87,83 +98,35 @@ public class CreatePaymentRequest {
         this.currency = currency;
     }
 
-    public String getPaymentMethod() {
-        return paymentMethod;
+    public String getDescription() {
+        return description;
     }
 
-    public void setPaymentMethod(String paymentMethod) {
-        this.paymentMethod = paymentMethod;
+    public void setDescription(String description) {
+        this.description = description;
     }
 
-    public String getGatewayProvider() {
-        return gatewayProvider;
+    public Boolean getIsSplitPayment() {
+        return isSplitPayment;
     }
 
-    public void setGatewayProvider(String gatewayProvider) {
-        this.gatewayProvider = gatewayProvider;
+    public void setIsSplitPayment(Boolean isSplitPayment) {
+        this.isSplitPayment = isSplitPayment;
     }
 
-    public String getGatewayPaymentMethodId() {
-        return gatewayPaymentMethodId;
+    public String getGroupOrderId() {
+        return groupOrderId;
     }
 
-    public void setGatewayPaymentMethodId(String gatewayPaymentMethodId) {
-        this.gatewayPaymentMethodId = gatewayPaymentMethodId;
+    public void setGroupOrderId(String groupOrderId) {
+        this.groupOrderId = groupOrderId;
     }
 
-    public String getCustomerEmail() {
-        return customerEmail;
+    public Map<String, Double> getSplitDetails() {
+        return splitDetails;
     }
 
-    public void setCustomerEmail(String customerEmail) {
-        this.customerEmail = customerEmail;
-    }
-
-    public String getCustomerPhone() {
-        return customerPhone;
-    }
-
-    public void setCustomerPhone(String customerPhone) {
-        this.customerPhone = customerPhone;
-    }
-
-    public Address getBillingAddress() {
-        return billingAddress;
-    }
-
-    public void setBillingAddress(Address billingAddress) {
-        this.billingAddress = billingAddress;
-    }
-
-    public Boolean getIsGroupPayment() {
-        return isGroupPayment;
-    }
-
-    public void setIsGroupPayment(Boolean isGroupPayment) {
-        this.isGroupPayment = isGroupPayment;
-    }
-
-    public String getGroupPaymentId() {
-        return groupPaymentId;
-    }
-
-    public void setGroupPaymentId(String groupPaymentId) {
-        this.groupPaymentId = groupPaymentId;
-    }
-
-    public Double getUserShareAmount() {
-        return userShareAmount;
-    }
-
-    public void setUserShareAmount(Double userShareAmount) {
-        this.userShareAmount = userShareAmount;
-    }
-
-    public Integer getTotalParticipants() {
-        return totalParticipants;
-    }
-
-    public void setTotalParticipants(Integer totalParticipants) {
-        this.totalParticipants = totalParticipants;
+    public void setSplitDetails(Map<String, Double> splitDetails) {
+        this.splitDetails = splitDetails;
     }
 }

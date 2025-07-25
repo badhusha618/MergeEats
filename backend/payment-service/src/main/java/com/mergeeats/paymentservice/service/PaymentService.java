@@ -1,19 +1,18 @@
 package com.mergeeats.paymentservice.service;
 
 import com.mergeeats.common.models.Payment;
-import com.mergeeats.paymentservice.dto.CreatePaymentRequest;
-import com.mergeeats.paymentservice.dto.RefundRequest;
+import com.mergeeats.common.models.Payment.PaymentMethod;
+import com.mergeeats.common.models.Payment.PaymentType;
+import com.mergeeats.common.enums.PaymentStatus;
 import com.mergeeats.paymentservice.repository.PaymentRepository;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 import org.springframework.beans.factory.annotation.Autowired;
-import org.springframework.beans.factory.annotation.Value;
 import org.springframework.kafka.core.KafkaTemplate;
-import org.springframework.scheduling.annotation.Async;
 import org.springframework.stereotype.Service;
 import java.time.LocalDateTime;
 import java.util.*;
-import java.util.concurrent.CompletableFuture;
+import java.util.stream.Collectors;
 
 @Service
 public class PaymentService {
@@ -26,419 +25,420 @@ public class PaymentService {
     @Autowired
     private KafkaTemplate<String, Object> kafkaTemplate;
 
-    @Value("${payment.fees.platform-fee-percentage:2.5}")
-    private Double platformFeePercentage;
-
-    @Value("${payment.fees.payment-gateway-fee-percentage:2.9}")
-    private Double gatewayFeePercentage;
-
-    @Value("${payment.fees.min-platform-fee:5.0}")
-    private Double minPlatformFee;
-
-    @Value("${payment.fees.max-platform-fee:50.0}")
-    private Double maxPlatformFee;
-
-    @Value("${payment.processing.timeout-seconds:30}")
-    private Integer processingTimeoutSeconds;
-
-    @Value("${payment.processing.retry-attempts:3}")
-    private Integer maxRetryAttempts;
-
-    // Create payment
-    public Payment createPayment(CreatePaymentRequest request) {
-        logger.info("Creating payment for order: {}", request.getOrderId());
-
-        // Check if payment already exists for this order
-        Optional<Payment> existingPayment = paymentRepository.findByOrderId(request.getOrderId());
-        if (existingPayment.isPresent()) {
-            throw new RuntimeException("Payment already exists for order: " + request.getOrderId());
-        }
-
-        Payment payment = new Payment(
-            request.getOrderId(),
-            request.getUserId(),
-            request.getAmount(),
-            request.getPaymentMethod()
-        );
-
-        payment.setCurrency(request.getCurrency());
-        payment.setGatewayProvider(request.getGatewayProvider());
-        payment.setGatewayPaymentMethodId(request.getGatewayPaymentMethodId());
-        payment.setCustomerEmail(request.getCustomerEmail());
-        payment.setCustomerPhone(request.getCustomerPhone());
-        payment.setBillingAddress(request.getBillingAddress());
-
-        // Group payment details
-        if (request.getIsGroupPayment()) {
-            payment.setIsGroupPayment(true);
-            payment.setGroupPaymentId(request.getGroupPaymentId());
-            payment.setUserShareAmount(request.getUserShareAmount());
-            payment.setTotalParticipants(request.getTotalParticipants());
-        }
-
-        // Calculate fees
-        calculateFees(payment);
-
-        // Generate transaction reference
-        payment.setTransactionReference(generateTransactionReference());
-
-        Payment savedPayment = paymentRepository.save(payment);
-
-        // Publish payment created event
-        publishPaymentEvent("PAYMENT_CREATED", savedPayment);
-
-        // Process payment asynchronously
-        processPaymentAsync(savedPayment.getPaymentId());
-
-        logger.info("Payment created successfully: {}", savedPayment.getPaymentId());
-        return savedPayment;
-    }
-
-    // Process payment asynchronously
-    @Async
-    public CompletableFuture<Payment> processPaymentAsync(String paymentId) {
+    // Payment Processing
+    public Payment initiatePayment(Payment payment) {
         try {
-            Payment payment = getPaymentById(paymentId);
-            return CompletableFuture.completedFuture(processPayment(payment));
+            // Validate payment data
+            validatePaymentData(payment);
+
+            // Set initial values
+            payment.setStatus(PaymentStatus.PENDING);
+            payment.setRetryCount(0);
+            payment.setMaxRetries(3);
+            
+            // Calculate fees
+            calculateFees(payment);
+
+            // Save payment
+            Payment savedPayment = paymentRepository.save(payment);
+
+            // Publish payment initiated event
+            publishPaymentEvent("payment-initiated", savedPayment);
+
+            logger.info("Payment initiated: {} for order: {}", savedPayment.getPaymentId(), savedPayment.getOrderId());
+            return savedPayment;
+
         } catch (Exception e) {
-            logger.error("Error processing payment asynchronously: {}", paymentId, e);
-            return CompletableFuture.failedFuture(e);
+            logger.error("Error initiating payment for order {}: {}", payment.getOrderId(), e.getMessage());
+            throw new RuntimeException("Payment initiation failed: " + e.getMessage());
         }
     }
 
-    // Process payment
-    private Payment processPayment(Payment payment) {
-        logger.info("Processing payment: {}", payment.getPaymentId());
-
+    public Payment processPayment(String paymentId) {
         try {
+            Optional<Payment> paymentOpt = paymentRepository.findById(paymentId);
+            if (paymentOpt.isEmpty()) {
+                throw new RuntimeException("Payment not found");
+            }
+
+            Payment payment = paymentOpt.get();
+            
+            if (payment.getStatus() != PaymentStatus.PENDING) {
+                throw new RuntimeException("Payment is not in pending status");
+            }
+
             // Update status to processing
-            payment.setPaymentStatus("PROCESSING");
+            payment.setStatus(PaymentStatus.PROCESSING);
             payment = paymentRepository.save(payment);
 
-            // Publish processing event
-            publishPaymentEvent("PAYMENT_PROCESSING", payment);
+            // Simulate payment gateway processing
+            boolean paymentSuccess = processWithGateway(payment);
 
-            // Simulate payment processing based on method
-            boolean processingResult = simulatePaymentProcessing(payment);
-
-            if (processingResult) {
-                // Payment successful
-                payment.setPaymentStatus("COMPLETED");
-                payment.setCompletedAt(LocalDateTime.now());
-                payment.setAuthorizationCode(generateAuthorizationCode());
-                payment.setGatewayTransactionId(generateGatewayTransactionId());
-                payment.setReceiptUrl(generateReceiptUrl(payment.getPaymentId()));
-
-                logger.info("Payment completed successfully: {}", payment.getPaymentId());
+            if (paymentSuccess) {
+                payment.setStatus(PaymentStatus.COMPLETED);
+                payment.setProcessedAt(LocalDateTime.now());
+                payment.setGatewayTransactionId(generateTransactionId());
             } else {
-                // Payment failed
-                payment.setPaymentStatus("FAILED");
-                payment.setFailedAt(LocalDateTime.now());
-                payment.setFailureReason("Payment processing failed");
-                payment.setFailureCode("PROCESSING_ERROR");
+                payment.setStatus(PaymentStatus.FAILED);
+                payment.setFailureReason("Gateway processing failed");
+                payment.setRetryCount(payment.getRetryCount() + 1);
+                
+                if (payment.canRetry()) {
+                    payment.setNextRetryAt(LocalDateTime.now().plusMinutes(5));
+                }
+            }
 
-                logger.warn("Payment failed: {}", payment.getPaymentId());
+            Payment savedPayment = paymentRepository.save(payment);
+
+            // Publish payment event
+            String eventType = paymentSuccess ? "payment-completed" : "payment-failed";
+            publishPaymentEvent(eventType, savedPayment);
+
+            logger.info("Payment {} processed with status: {}", paymentId, savedPayment.getStatus());
+            return savedPayment;
+
+        } catch (Exception e) {
+            logger.error("Error processing payment {}: {}", paymentId, e.getMessage());
+            throw new RuntimeException("Payment processing failed: " + e.getMessage());
+        }
+    }
+
+    public Payment refundPayment(String paymentId, Double refundAmount, String reason) {
+        try {
+            Optional<Payment> paymentOpt = paymentRepository.findById(paymentId);
+            if (paymentOpt.isEmpty()) {
+                throw new RuntimeException("Payment not found");
+            }
+
+            Payment payment = paymentOpt.get();
+            
+            if (payment.getStatus() != PaymentStatus.COMPLETED) {
+                throw new RuntimeException("Cannot refund non-completed payment");
+            }
+
+            double remainingAmount = payment.getRemainingRefundAmount();
+            if (refundAmount > remainingAmount) {
+                throw new RuntimeException("Refund amount exceeds remaining refundable amount");
+            }
+
+            // Process refund
+            boolean refundSuccess = processRefundWithGateway(payment, refundAmount);
+            
+            if (refundSuccess) {
+                payment.setRefundAmount(payment.getRefundAmount() + refundAmount);
+                payment.setRefundReason(reason);
+                payment.setRefundedAt(LocalDateTime.now());
+                payment.setRefundTransactionId(generateTransactionId());
+
+                // Update payment status if fully refunded
+                if (payment.isFullyRefunded()) {
+                    payment.setStatus(PaymentStatus.REFUNDED);
+                } else {
+                    payment.setStatus(PaymentStatus.PARTIALLY_REFUNDED);
+                }
+
+                Payment savedPayment = paymentRepository.save(payment);
+
+                // Publish refund event
+                publishRefundEvent(savedPayment, refundAmount, reason);
+
+                logger.info("Refund processed: {} for payment: {}", refundAmount, paymentId);
+                return savedPayment;
+            } else {
+                throw new RuntimeException("Refund processing failed at gateway");
             }
 
         } catch (Exception e) {
-            // Payment failed due to exception
-            payment.setPaymentStatus("FAILED");
-            payment.setFailedAt(LocalDateTime.now());
-            payment.setFailureReason("Exception during processing: " + e.getMessage());
-            payment.setFailureCode("SYSTEM_ERROR");
-
-            logger.error("Payment processing exception: {}", payment.getPaymentId(), e);
+            logger.error("Error processing refund for payment {}: {}", paymentId, e.getMessage());
+            throw e;
         }
-
-        Payment updatedPayment = paymentRepository.save(payment);
-
-        // Publish completion event
-        publishPaymentEvent("PAYMENT_COMPLETED", updatedPayment);
-
-        return updatedPayment;
     }
 
-    // Retry failed payment
-    public Payment retryPayment(String paymentId) {
-        Payment payment = getPaymentById(paymentId);
-
-        if (!"FAILED".equals(payment.getPaymentStatus())) {
-            throw new RuntimeException("Can only retry failed payments");
-        }
-
-        if (payment.getRetryAttempts() >= payment.getMaxRetryAttempts()) {
-            throw new RuntimeException("Maximum retry attempts exceeded");
-        }
-
-        // Increment retry count
-        payment.setRetryAttempts(payment.getRetryAttempts() + 1);
-        payment.setNextRetryAt(LocalDateTime.now().plusMinutes(5)); // 5 minute delay
-
-        // Reset status to pending
-        payment.setPaymentStatus("PENDING");
-        payment.setFailedAt(null);
-        payment.setFailureReason(null);
-        payment.setFailureCode(null);
-
-        Payment updatedPayment = paymentRepository.save(payment);
-
-        // Process payment again
-        processPaymentAsync(paymentId);
-
-        logger.info("Payment retry initiated: {} (attempt {})", paymentId, payment.getRetryAttempts());
-        return updatedPayment;
-    }
-
-    // Cancel payment
-    public Payment cancelPayment(String paymentId, String reason) {
-        Payment payment = getPaymentById(paymentId);
-
-        if ("COMPLETED".equals(payment.getPaymentStatus())) {
-            throw new RuntimeException("Cannot cancel completed payment. Use refund instead.");
-        }
-
-        payment.setPaymentStatus("CANCELLED");
-        payment.setCancelledAt(LocalDateTime.now());
-        payment.setFailureReason(reason);
-
-        Payment updatedPayment = paymentRepository.save(payment);
-
-        // Publish cancellation event
-        publishPaymentEvent("PAYMENT_CANCELLED", updatedPayment);
-
-        logger.info("Payment cancelled: {} - {}", paymentId, reason);
-        return updatedPayment;
-    }
-
-    // Process refund
-    public Payment processRefund(RefundRequest request) {
-        Payment originalPayment = getPaymentById(request.getPaymentId());
-
-        if (!"COMPLETED".equals(originalPayment.getPaymentStatus())) {
-            throw new RuntimeException("Can only refund completed payments");
-        }
-
-        if (request.getRefundAmount() > originalPayment.getAmount()) {
-            throw new RuntimeException("Refund amount cannot exceed original payment amount");
-        }
-
-        // Create refund payment record
-        Payment refundPayment = new Payment();
-        refundPayment.setOrderId(originalPayment.getOrderId());
-        refundPayment.setUserId(originalPayment.getUserId());
-        refundPayment.setAmount(request.getRefundAmount());
-        refundPayment.setCurrency(originalPayment.getCurrency());
-        refundPayment.setPaymentMethod(originalPayment.getPaymentMethod());
-        refundPayment.setPaymentStatus("PROCESSING");
-        refundPayment.setPaymentType(request.getIsPartialRefund() ? "PARTIAL_REFUND" : "REFUND");
-        refundPayment.setGatewayProvider(originalPayment.getGatewayProvider());
-        refundPayment.setRefundReason(request.getRefundReason());
-        refundPayment.setRefundInitiatedAt(LocalDateTime.now());
-        refundPayment.setTransactionReference(generateTransactionReference());
-
-        Payment savedRefund = paymentRepository.save(refundPayment);
-
-        // Update original payment
-        originalPayment.setRefundAmount(request.getRefundAmount());
-        originalPayment.setRefundReason(request.getRefundReason());
-        originalPayment.setRefundReference(savedRefund.getTransactionReference());
-        originalPayment.setRefundInitiatedAt(LocalDateTime.now());
-
-        if (request.getIsPartialRefund()) {
-            originalPayment.setPaymentStatus("PARTIALLY_REFUNDED");
-        } else {
-            originalPayment.setPaymentStatus("REFUNDED");
-        }
-
-        paymentRepository.save(originalPayment);
-
-        // Simulate refund processing
+    // Split Payment Management
+    public List<Payment> initiateSplitPayment(String groupOrderId, Map<String, Double> splitDetails, 
+                                            PaymentMethod paymentMethod, String currency) {
         try {
-            Thread.sleep(2000); // Simulate processing time
-            
-            savedRefund.setPaymentStatus("COMPLETED");
-            savedRefund.setCompletedAt(LocalDateTime.now());
-            savedRefund.setGatewayTransactionId(generateGatewayTransactionId());
-            
-            originalPayment.setRefundCompletedAt(LocalDateTime.now());
-            
-            logger.info("Refund processed successfully: {}", savedRefund.getPaymentId());
+            List<Payment> splitPayments = new ArrayList<>();
+
+            for (Map.Entry<String, Double> entry : splitDetails.entrySet()) {
+                String userId = entry.getKey();
+                Double amount = entry.getValue();
+
+                Payment splitPayment = new Payment();
+                splitPayment.setOrderId(groupOrderId);
+                splitPayment.setUserId(userId);
+                splitPayment.setAmount(amount);
+                splitPayment.setPaymentMethod(paymentMethod);
+                splitPayment.setPaymentType(PaymentType.ORDER_PAYMENT);
+                splitPayment.setCurrency(currency);
+                splitPayment.setIsSplitPayment(true);
+                splitPayment.setGroupOrderId(groupOrderId);
+                splitPayment.setSplitDetails(splitDetails);
+
+                Payment initiatedPayment = initiatePayment(splitPayment);
+                splitPayments.add(initiatedPayment);
+            }
+
+            logger.info("Split payment initiated for group order: {} with {} payments", groupOrderId, splitPayments.size());
+            return splitPayments;
+
         } catch (Exception e) {
-            savedRefund.setPaymentStatus("FAILED");
-            savedRefund.setFailedAt(LocalDateTime.now());
-            savedRefund.setFailureReason("Refund processing failed");
-            
-            logger.error("Refund processing failed: {}", savedRefund.getPaymentId(), e);
+            logger.error("Error initiating split payment for group order {}: {}", groupOrderId, e.getMessage());
+            throw e;
         }
-
-        Payment finalRefund = paymentRepository.save(savedRefund);
-        paymentRepository.save(originalPayment);
-
-        // Publish refund event
-        publishPaymentEvent("REFUND_PROCESSED", finalRefund);
-
-        return finalRefund;
     }
 
-    // Get payment by ID
-    public Payment getPaymentById(String paymentId) {
-        return paymentRepository.findById(paymentId)
-            .orElseThrow(() -> new RuntimeException("Payment not found: " + paymentId));
+    public boolean isGroupPaymentComplete(String groupOrderId) {
+        List<Payment> groupPayments = paymentRepository.findByGroupOrderId(groupOrderId);
+        return groupPayments.stream().allMatch(payment -> payment.getStatus() == PaymentStatus.COMPLETED);
     }
 
-    // Get payment by order ID
-    public Payment getPaymentByOrderId(String orderId) {
-        return paymentRepository.findByOrderId(orderId)
-            .orElseThrow(() -> new RuntimeException("Payment not found for order: " + orderId));
+    // Payment Retrieval
+    public Optional<Payment> getPaymentById(String paymentId) {
+        return paymentRepository.findById(paymentId);
     }
 
-    // Get payments by user
-    public List<Payment> getPaymentsByUser(String userId) {
+    public List<Payment> getPaymentsByOrderId(String orderId) {
+        return paymentRepository.findByOrderId(orderId);
+    }
+
+    public List<Payment> getPaymentsByUserId(String userId) {
         return paymentRepository.findByUserId(userId);
     }
 
-    // Get payments by status
-    public List<Payment> getPaymentsByStatus(String status) {
-        return paymentRepository.findByPaymentStatus(status);
+    public List<Payment> getPaymentsByStatus(PaymentStatus status) {
+        return paymentRepository.findByStatus(status);
     }
 
-    // Get group payments
-    public List<Payment> getGroupPayments(String groupPaymentId) {
-        return paymentRepository.findByGroupPaymentId(groupPaymentId);
+    public List<Payment> getUserPaymentHistory(String userId, int limit) {
+        return paymentRepository.findByUserId(userId)
+                .stream()
+                .sorted((p1, p2) -> p2.getCreatedAt().compareTo(p1.getCreatedAt()))
+                .limit(limit)
+                .collect(Collectors.toList());
     }
 
-    // Get payment statistics
-    public Map<String, Object> getPaymentStatistics() {
-        Map<String, Object> stats = new HashMap<>();
+    // Retry Management
+    public void retryFailedPayments() {
+        try {
+            LocalDateTime now = LocalDateTime.now();
+            List<Payment> failedPayments = paymentRepository.findFailedPaymentsDueForRetry(now);
 
-        stats.put("totalPayments", paymentRepository.count());
-        stats.put("completedPayments", paymentRepository.countByPaymentStatus("COMPLETED"));
-        stats.put("failedPayments", paymentRepository.countByPaymentStatus("FAILED"));
-        stats.put("cancelledPayments", paymentRepository.countByPaymentStatus("CANCELLED"));
-        stats.put("refundedPayments", paymentRepository.countByPaymentStatus("REFUNDED"));
-        stats.put("partiallyRefundedPayments", paymentRepository.countByPaymentStatus("PARTIALLY_REFUNDED"));
+            for (Payment payment : failedPayments) {
+                if (payment.canRetry()) {
+                    logger.info("Retrying payment: {}", payment.getPaymentId());
+                    processPayment(payment.getPaymentId());
+                }
+            }
 
-        // Calculate success rate
-        long total = paymentRepository.count();
-        long completed = paymentRepository.countByPaymentStatus("COMPLETED");
-        if (total > 0) {
-            double successRate = (completed * 100.0) / total;
-            stats.put("successRate", Math.round(successRate * 100.0) / 100.0);
+        } catch (Exception e) {
+            logger.error("Error during retry process: {}", e.getMessage());
         }
-
-        // Group payment statistics
-        stats.put("groupPayments", paymentRepository.countByPaymentMethod("GROUP_PAYMENT"));
-
-        // Payment method breakdown
-        Map<String, Long> methodBreakdown = new HashMap<>();
-        methodBreakdown.put("CREDIT_CARD", paymentRepository.countByPaymentMethod("CREDIT_CARD"));
-        methodBreakdown.put("DEBIT_CARD", paymentRepository.countByPaymentMethod("DEBIT_CARD"));
-        methodBreakdown.put("DIGITAL_WALLET", paymentRepository.countByPaymentMethod("DIGITAL_WALLET"));
-        methodBreakdown.put("UPI", paymentRepository.countByPaymentMethod("UPI"));
-        methodBreakdown.put("CASH", paymentRepository.countByPaymentMethod("CASH"));
-        stats.put("paymentMethodBreakdown", methodBreakdown);
-
-        return stats;
     }
 
-    // Get user payment statistics
-    public Map<String, Object> getUserPaymentStatistics(String userId) {
-        Map<String, Object> stats = new HashMap<>();
+    public void timeoutPendingPayments() {
+        try {
+            LocalDateTime cutoffTime = LocalDateTime.now().minusMinutes(30); // 30 minutes timeout
+            List<Payment> pendingPayments = paymentRepository.findPendingPaymentsOlderThan(cutoffTime);
 
-        stats.put("totalPayments", paymentRepository.countByUserId(userId));
-        
-        List<Payment> userPayments = paymentRepository.findByUserId(userId);
-        
-        long completed = userPayments.stream().mapToLong(p -> "COMPLETED".equals(p.getPaymentStatus()) ? 1 : 0).sum();
-        long failed = userPayments.stream().mapToLong(p -> "FAILED".equals(p.getPaymentStatus()) ? 1 : 0).sum();
-        
-        stats.put("completedPayments", completed);
-        stats.put("failedPayments", failed);
+            for (Payment payment : pendingPayments) {
+                payment.setStatus(PaymentStatus.FAILED);
+                payment.setFailureReason("Payment timeout");
+                paymentRepository.save(payment);
 
-        // Total amount spent
-        double totalAmount = userPayments.stream()
-            .filter(p -> "COMPLETED".equals(p.getPaymentStatus()))
-            .mapToDouble(Payment::getAmount)
-            .sum();
-        stats.put("totalAmountSpent", Math.round(totalAmount * 100.0) / 100.0);
+                publishPaymentEvent("payment-timeout", payment);
+                logger.info("Payment {} timed out", payment.getPaymentId());
+            }
 
-        return stats;
+        } catch (Exception e) {
+            logger.error("Error timing out pending payments: {}", e.getMessage());
+        }
     }
 
-    // Helper method to calculate fees
+    // Analytics and Reporting
+    public Map<String, Object> getPaymentStatistics(LocalDateTime startDate, LocalDateTime endDate) {
+        try {
+            Map<String, Object> stats = new HashMap<>();
+
+            // Total payments
+            List<Payment> allPayments = paymentRepository.findByCreatedAtBetween(startDate, endDate);
+            stats.put("totalPayments", allPayments.size());
+
+            // Status distribution
+            Map<PaymentStatus, Long> statusDistribution = allPayments.stream()
+                    .collect(Collectors.groupingBy(Payment::getStatus, Collectors.counting()));
+            stats.put("statusDistribution", statusDistribution);
+
+            // Payment method distribution
+            Map<PaymentMethod, Long> methodDistribution = allPayments.stream()
+                    .collect(Collectors.groupingBy(Payment::getPaymentMethod, Collectors.counting()));
+            stats.put("methodDistribution", methodDistribution);
+
+            // Revenue calculation
+            double totalRevenue = allPayments.stream()
+                    .filter(p -> p.getStatus() == PaymentStatus.COMPLETED)
+                    .mapToDouble(Payment::getAmount)
+                    .sum();
+            stats.put("totalRevenue", totalRevenue);
+
+            // Platform fees
+            double totalPlatformFees = allPayments.stream()
+                    .filter(p -> p.getStatus() == PaymentStatus.COMPLETED)
+                    .mapToDouble(Payment::getPlatformFee)
+                    .sum();
+            stats.put("totalPlatformFees", totalPlatformFees);
+
+            // Gateway fees
+            double totalGatewayFees = allPayments.stream()
+                    .filter(p -> p.getStatus() == PaymentStatus.COMPLETED)
+                    .mapToDouble(Payment::getGatewayFee)
+                    .sum();
+            stats.put("totalGatewayFees", totalGatewayFees);
+
+            // Average transaction value
+            double avgTransactionValue = allPayments.stream()
+                    .filter(p -> p.getStatus() == PaymentStatus.COMPLETED)
+                    .mapToDouble(Payment::getAmount)
+                    .average()
+                    .orElse(0.0);
+            stats.put("averageTransactionValue", avgTransactionValue);
+
+            // Success rate
+            long completedPayments = statusDistribution.getOrDefault(PaymentStatus.COMPLETED, 0L);
+            double successRate = allPayments.isEmpty() ? 0.0 : (double) completedPayments / allPayments.size() * 100;
+            stats.put("successRate", successRate);
+
+            return stats;
+
+        } catch (Exception e) {
+            logger.error("Error generating payment statistics: {}", e.getMessage());
+            throw e;
+        }
+    }
+
+    public List<Payment> getTopTransactions(int limit) {
+        return paymentRepository.findByStatus(PaymentStatus.COMPLETED)
+                .stream()
+                .sorted((p1, p2) -> Double.compare(p2.getAmount(), p1.getAmount()))
+                .limit(limit)
+                .collect(Collectors.toList());
+    }
+
+    // Private Helper Methods
+    private void validatePaymentData(Payment payment) {
+        if (payment.getOrderId() == null || payment.getOrderId().trim().isEmpty()) {
+            throw new IllegalArgumentException("Order ID is required");
+        }
+        if (payment.getUserId() == null || payment.getUserId().trim().isEmpty()) {
+            throw new IllegalArgumentException("User ID is required");
+        }
+        if (payment.getAmount() == null || payment.getAmount() <= 0) {
+            throw new IllegalArgumentException("Amount must be greater than 0");
+        }
+        if (payment.getPaymentMethod() == null) {
+            throw new IllegalArgumentException("Payment method is required");
+        }
+        if (payment.getPaymentType() == null) {
+            throw new IllegalArgumentException("Payment type is required");
+        }
+    }
+
     private void calculateFees(Payment payment) {
-        Double amount = payment.getAmount();
+        double amount = payment.getAmount();
         
-        // Calculate platform fee
-        Double platformFee = (amount * platformFeePercentage) / 100.0;
-        platformFee = Math.max(minPlatformFee, Math.min(maxPlatformFee, platformFee));
+        // Calculate platform fee (2.5% with min 5.0 and max 50.0)
+        double platformFee = amount * 0.025;
+        platformFee = Math.max(5.0, Math.min(50.0, platformFee));
         payment.setPlatformFee(platformFee);
 
-        // Calculate gateway fee
-        Double gatewayFee = (amount * gatewayFeePercentage) / 100.0;
+        // Calculate gateway fee (2.9%)
+        double gatewayFee = amount * 0.029;
         payment.setGatewayFee(gatewayFee);
 
-        // Calculate net amount (amount - fees)
-        Double netAmount = amount - platformFee - gatewayFee;
-        payment.setNetAmount(Math.max(0.0, netAmount));
+        // Calculate tax (18% GST on platform fee)
+        double taxAmount = platformFee * 0.18;
+        payment.setTaxAmount(taxAmount);
+
+        // Calculate net amount
+        double netAmount = amount - platformFee - gatewayFee - taxAmount;
+        payment.setNetAmount(netAmount);
     }
 
-    // Helper method to simulate payment processing
-    private boolean simulatePaymentProcessing(Payment payment) {
+    private boolean processWithGateway(Payment payment) {
+        // Simulate gateway processing
+        // In real implementation, this would integrate with Stripe/Razorpay
         try {
-            // Simulate processing time
-            Thread.sleep(1000 + (int)(Math.random() * 2000));
-
-            // Simulate different success rates based on payment method
-            double successRate = switch (payment.getPaymentMethod()) {
-                case "CREDIT_CARD", "DEBIT_CARD" -> 0.95;
-                case "DIGITAL_WALLET" -> 0.98;
-                case "UPI" -> 0.92;
-                case "CASH" -> 1.0;
-                default -> 0.90;
-            };
-
-            return Math.random() < successRate;
-
+            Thread.sleep(1000); // Simulate processing time
+            
+            // Simulate 90% success rate
+            Random random = new Random();
+            boolean success = random.nextDouble() < 0.9;
+            
+            if (success) {
+                payment.setGatewayPaymentId("pay_" + generateTransactionId());
+                payment.setGatewayOrderId("order_" + generateTransactionId());
+            }
+            
+            return success;
+            
         } catch (InterruptedException e) {
             Thread.currentThread().interrupt();
             return false;
         }
     }
 
-    // Helper method to generate transaction reference
-    private String generateTransactionReference() {
-        return "TXN" + System.currentTimeMillis() + (int)(Math.random() * 1000);
+    private boolean processRefundWithGateway(Payment payment, Double refundAmount) {
+        // Simulate refund processing
+        // In real implementation, this would integrate with payment gateway
+        try {
+            Thread.sleep(500); // Simulate processing time
+            
+            // Simulate 95% success rate for refunds
+            Random random = new Random();
+            return random.nextDouble() < 0.95;
+            
+        } catch (InterruptedException e) {
+            Thread.currentThread().interrupt();
+            return false;
+        }
     }
 
-    // Helper method to generate authorization code
-    private String generateAuthorizationCode() {
-        return "AUTH" + System.currentTimeMillis();
+    private String generateTransactionId() {
+        return UUID.randomUUID().toString().replace("-", "").substring(0, 16);
     }
 
-    // Helper method to generate gateway transaction ID
-    private String generateGatewayTransactionId() {
-        return "GW" + System.currentTimeMillis() + (int)(Math.random() * 10000);
-    }
-
-    // Helper method to generate receipt URL
-    private String generateReceiptUrl(String paymentId) {
-        return "https://receipts.mergeeats.com/payment/" + paymentId;
-    }
-
-    // Helper method to publish payment events
+    // Event Publishing
     private void publishPaymentEvent(String eventType, Payment payment) {
-        Map<String, Object> event = new HashMap<>();
-        event.put("eventType", eventType);
-        event.put("paymentId", payment.getPaymentId());
-        event.put("orderId", payment.getOrderId());
-        event.put("userId", payment.getUserId());
-        event.put("amount", payment.getAmount());
-        event.put("paymentStatus", payment.getStatus().name());
-        event.put("paymentMethod", payment.getPaymentMethod().name());
-        event.put("isGroupPayment", payment.getIsGroupPayment());
-        event.put("timestamp", LocalDateTime.now());
+        try {
+            var event = new Object() {
+                public final String paymentId = payment.getPaymentId();
+                public final String orderId = payment.getOrderId();
+                public final String userId = payment.getUserId();
+                public final Double amount = payment.getAmount();
+                public final PaymentStatus status = payment.getStatus();
+                public final PaymentMethod paymentMethod = payment.getPaymentMethod();
+                public final LocalDateTime timestamp = LocalDateTime.now();
+            };
+            kafkaTemplate.send("payment-events", eventType, event);
+        } catch (Exception e) {
+            logger.error("Error publishing payment event: {}", e.getMessage());
+        }
+    }
 
-        kafkaTemplate.send("payment-events", event);
+    private void publishRefundEvent(Payment payment, Double refundAmount, String reason) {
+        try {
+            var event = new Object() {
+                public final String paymentId = payment.getPaymentId();
+                public final String orderId = payment.getOrderId();
+                public final String userId = payment.getUserId();
+                public final Double refundAmount = refundAmount;
+                public final String reason = reason;
+                public final String refundTransactionId = payment.getRefundTransactionId();
+                public final LocalDateTime timestamp = LocalDateTime.now();
+            };
+            kafkaTemplate.send("payment-refund-events", "refund-processed", event);
+        } catch (Exception e) {
+            logger.error("Error publishing refund event: {}", e.getMessage());
+        }
     }
 }

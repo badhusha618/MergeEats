@@ -12,18 +12,16 @@ public class RefundRequest {
     private Double refundAmount;
 
     @NotBlank(message = "Refund reason is required")
-    @Size(min = 10, max = 500, message = "Refund reason must be between 10 and 500 characters")
-    private String refundReason;
-
-    private Boolean isPartialRefund = false;
+    @Size(max = 500, message = "Refund reason cannot exceed 500 characters")
+    private String reason;
 
     // Constructors
     public RefundRequest() {}
 
-    public RefundRequest(String paymentId, Double refundAmount, String refundReason) {
+    public RefundRequest(String paymentId, Double refundAmount, String reason) {
         this.paymentId = paymentId;
         this.refundAmount = refundAmount;
-        this.refundReason = refundReason;
+        this.reason = reason;
     }
 
     // Getters and Setters
@@ -43,19 +41,11 @@ public class RefundRequest {
         this.refundAmount = refundAmount;
     }
 
-    public String getRefundReason() {
-        return refundReason;
+    public String getReason() {
+        return reason;
     }
 
-    public void setRefundReason(String refundReason) {
-        this.refundReason = refundReason;
-    }
-
-    public Boolean getIsPartialRefund() {
-        return isPartialRefund;
-    }
-
-    public void setIsPartialRefund(Boolean isPartialRefund) {
-        this.isPartialRefund = isPartialRefund;
+    public void setReason(String reason) {
+        this.reason = reason;
     }
 }
