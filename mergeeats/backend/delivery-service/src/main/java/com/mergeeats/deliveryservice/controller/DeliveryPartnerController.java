@@ -142,12 +142,6 @@ public class DeliveryPartnerController {
             Address address = new Address();
             address.setLatitude(locationRequest.getLatitude());
             address.setLongitude(locationRequest.getLongitude());
-            address.setStreet(locationRequest.getStreet());
-            address.setCity(locationRequest.getCity());
-            address.setState(locationRequest.getState());
-            address.setPostalCode(locationRequest.getPostalCode());
-            address.setCountry(locationRequest.getCountry());
-            address.setLandmark(locationRequest.getLandmark());
 
             DeliveryPartner partner = deliveryPartnerService.updateLocation(partnerId, address);
             return ResponseEntity.ok(partner);
