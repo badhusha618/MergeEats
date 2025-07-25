@@ -24,30 +24,34 @@ public class CreateDeliveryRequest {
     @Valid
     private Address deliveryAddress;
 
+    @NotNull(message = "Order total is required")
+    @DecimalMin(value = "0.0", message = "Order total cannot be negative")
+    private Double orderTotal;
+
     @DecimalMin(value = "0.0", message = "Delivery fee cannot be negative")
-    private Double deliveryFee;
+    private Double deliveryFee = 0.0;
 
-    private String specialInstructions;
-
-    private String customerPhoneNumber;
-
-    private String restaurantPhoneNumber;
-
+    @NotNull(message = "Scheduled pickup time is required")
     private LocalDateTime scheduledPickupTime;
 
+    @NotNull(message = "Estimated delivery time is required")
     private LocalDateTime estimatedDeliveryTime;
+
+    @Size(max = 500, message = "Delivery instructions cannot exceed 500 characters")
+    private String deliveryInstructions;
+
+    @Pattern(regexp = "^[+]?[1-9]\\d{1,14}$", message = "Invalid customer phone number format")
+    private String customerPhone;
+
+    @Pattern(regexp = "^[+]?[1-9]\\d{1,14}$", message = "Invalid restaurant phone number format")
+    private String restaurantPhone;
+
+    private Boolean requiresSignature = false;
+
+    private String paymentMethod;
 
     // Constructors
     public CreateDeliveryRequest() {}
-
-    public CreateDeliveryRequest(String orderId, String customerId, String restaurantId,
-                                Address pickupAddress, Address deliveryAddress) {
-        this.orderId = orderId;
-        this.customerId = customerId;
-        this.restaurantId = restaurantId;
-        this.pickupAddress = pickupAddress;
-        this.deliveryAddress = deliveryAddress;
-    }
 
     // Getters and Setters
     public String getOrderId() {
@@ -90,36 +94,20 @@ public class CreateDeliveryRequest {
         this.deliveryAddress = deliveryAddress;
     }
 
+    public Double getOrderTotal() {
+        return orderTotal;
+    }
+
+    public void setOrderTotal(Double orderTotal) {
+        this.orderTotal = orderTotal;
+    }
+
     public Double getDeliveryFee() {
         return deliveryFee;
     }
 
     public void setDeliveryFee(Double deliveryFee) {
         this.deliveryFee = deliveryFee;
-    }
-
-    public String getSpecialInstructions() {
-        return specialInstructions;
-    }
-
-    public void setSpecialInstructions(String specialInstructions) {
-        this.specialInstructions = specialInstructions;
-    }
-
-    public String getCustomerPhoneNumber() {
-        return customerPhoneNumber;
-    }
-
-    public void setCustomerPhoneNumber(String customerPhoneNumber) {
-        this.customerPhoneNumber = customerPhoneNumber;
-    }
-
-    public String getRestaurantPhoneNumber() {
-        return restaurantPhoneNumber;
-    }
-
-    public void setRestaurantPhoneNumber(String restaurantPhoneNumber) {
-        this.restaurantPhoneNumber = restaurantPhoneNumber;
     }
 
     public LocalDateTime getScheduledPickupTime() {
@@ -136,5 +124,45 @@ public class CreateDeliveryRequest {
 
     public void setEstimatedDeliveryTime(LocalDateTime estimatedDeliveryTime) {
         this.estimatedDeliveryTime = estimatedDeliveryTime;
+    }
+
+    public String getDeliveryInstructions() {
+        return deliveryInstructions;
+    }
+
+    public void setDeliveryInstructions(String deliveryInstructions) {
+        this.deliveryInstructions = deliveryInstructions;
+    }
+
+    public String getCustomerPhone() {
+        return customerPhone;
+    }
+
+    public void setCustomerPhone(String customerPhone) {
+        this.customerPhone = customerPhone;
+    }
+
+    public String getRestaurantPhone() {
+        return restaurantPhone;
+    }
+
+    public void setRestaurantPhone(String restaurantPhone) {
+        this.restaurantPhone = restaurantPhone;
+    }
+
+    public Boolean getRequiresSignature() {
+        return requiresSignature;
+    }
+
+    public void setRequiresSignature(Boolean requiresSignature) {
+        this.requiresSignature = requiresSignature;
+    }
+
+    public String getPaymentMethod() {
+        return paymentMethod;
+    }
+
+    public void setPaymentMethod(String paymentMethod) {
+        this.paymentMethod = paymentMethod;
     }
 }

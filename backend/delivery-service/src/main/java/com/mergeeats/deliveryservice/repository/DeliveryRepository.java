@@ -13,75 +13,50 @@ import java.util.Optional;
 @Repository
 public interface DeliveryRepository extends MongoRepository<Delivery, String> {
 
-    // Find by order
-    Optional<Delivery> findByOrderId(String orderId);
-    List<Delivery> findByOrderIdIn(List<String> orderIds);
-
-    // Find by delivery partner
+    // Find deliveries by delivery partner
     List<Delivery> findByDeliveryPartnerId(String deliveryPartnerId);
-    List<Delivery> findByDeliveryPartnerIdAndStatus(String deliveryPartnerId, DeliveryStatus status);
-    
-    @Query("{'deliveryPartnerId': ?0, 'status': {'$in': ?1}}")
-    List<Delivery> findByDeliveryPartnerIdAndStatusIn(String deliveryPartnerId, List<DeliveryStatus> statuses);
 
-    // Find by customer
-    List<Delivery> findByCustomerId(String customerId);
-    List<Delivery> findByCustomerIdAndStatus(String customerId, DeliveryStatus status);
+    // Find deliveries by order ID
+    Optional<Delivery> findByOrderId(String orderId);
 
-    // Find by restaurant
-    List<Delivery> findByRestaurantId(String restaurantId);
-    List<Delivery> findByRestaurantIdAndStatus(String restaurantId, DeliveryStatus status);
-
-    // Find by status
+    // Find deliveries by status
     List<Delivery> findByStatus(DeliveryStatus status);
-    List<Delivery> findByStatusIn(List<DeliveryStatus> statuses);
 
-    // Find pending deliveries for assignment
-    @Query("{'status': 'PENDING', 'createdAt': {'$gte': ?0}}")
-    List<Delivery> findPendingDeliveriesAfter(LocalDateTime after);
-
-    // Find active deliveries for a partner
-    @Query("{'deliveryPartnerId': ?0, 'status': {'$in': ['ASSIGNED', 'ACCEPTED', 'PICKED_UP', 'IN_TRANSIT']}}")
+    // Find active deliveries for a delivery partner
+    @Query("{'deliveryPartnerId': ?0, 'status': {'$in': ['ASSIGNED', 'PICKED_UP', 'IN_TRANSIT']}}")
     List<Delivery> findActiveDeliveriesByPartnerId(String deliveryPartnerId);
 
-    // Find deliveries in area for optimization
-    @Query("{'pickupAddress.latitude': {'$gte': ?0, '$lte': ?1}, " +
-           "'pickupAddress.longitude': {'$gte': ?2, '$lte': ?3}, " +
-           "'status': {'$in': ['PENDING', 'ASSIGNED']}}")
-    List<Delivery> findDeliveriesInArea(Double minLat, Double maxLat, Double minLng, Double maxLng);
+    // Find available delivery partners in area
+    @Query("{'status': 'AVAILABLE', 'currentLocation': {'$near': {'$geometry': {'type': 'Point', 'coordinates': [?0, ?1]}, '$maxDistance': ?2}}}")
+    List<Delivery> findAvailablePartnersInArea(double longitude, double latitude, double maxDistanceMeters);
 
-    // Find merged deliveries
-    List<Delivery> findByIsMergedDelivery(Boolean isMerged);
-    List<Delivery> findByMergedOrderIdsContaining(String orderId);
+    // Find deliveries by restaurant
+    List<Delivery> findByRestaurantId(String restaurantId);
 
-    // Time-based queries
-    List<Delivery> findByCreatedAtBetween(LocalDateTime start, LocalDateTime end);
-    List<Delivery> findByScheduledPickupTimeBetween(LocalDateTime start, LocalDateTime end);
-    List<Delivery> findByEstimatedDeliveryTimeBetween(LocalDateTime start, LocalDateTime end);
+    // Find deliveries by customer
+    List<Delivery> findByCustomerId(String customerId);
 
-    // Statistics queries
-    @Query("{'deliveryPartnerId': ?0, 'status': 'DELIVERED', 'deliveredAt': {'$gte': ?1, '$lte': ?2}}")
-    List<Delivery> findCompletedDeliveriesByPartnerInPeriod(String partnerId, LocalDateTime start, LocalDateTime end);
+    // Find deliveries created within time range
+    List<Delivery> findByCreatedAtBetween(LocalDateTime startTime, LocalDateTime endTime);
 
-    @Query("{'restaurantId': ?0, 'createdAt': {'$gte': ?1, '$lte': ?2}}")
-    List<Delivery> findDeliveriesByRestaurantInPeriod(String restaurantId, LocalDateTime start, LocalDateTime end);
-
-    // Count queries
-    long countByDeliveryPartnerIdAndStatus(String deliveryPartnerId, DeliveryStatus status);
-    long countByStatusAndCreatedAtBetween(DeliveryStatus status, LocalDateTime start, LocalDateTime end);
-
-    // Distance-based queries (for route optimization)
-    @Query("{'status': {'$in': ['PENDING', 'ASSIGNED']}, " +
-           "'pickupAddress.latitude': {'$exists': true}, " +
-           "'pickupAddress.longitude': {'$exists': true}}")
-    List<Delivery> findDeliveriesWithLocationForOptimization();
+    // Find deliveries by estimated delivery time
+    List<Delivery> findByEstimatedDeliveryTimeBefore(LocalDateTime time);
 
     // Find overdue deliveries
-    @Query("{'status': {'$in': ['ASSIGNED', 'ACCEPTED', 'PICKED_UP', 'IN_TRANSIT']}, " +
-           "'estimatedDeliveryTime': {'$lt': ?0}}")
+    @Query("{'estimatedDeliveryTime': {'$lt': ?0}, 'status': {'$in': ['ASSIGNED', 'PICKED_UP', 'IN_TRANSIT']}}")
     List<Delivery> findOverdueDeliveries(LocalDateTime currentTime);
 
-    // Find deliveries requiring partner assignment
-    @Query("{'status': 'PENDING', 'deliveryPartnerId': null}")
-    List<Delivery> findDeliveriesRequiringAssignment();
+    // Find deliveries for batch assignment
+    @Query("{'status': 'PENDING', 'pickupLocation': {'$near': {'$geometry': {'type': 'Point', 'coordinates': [?0, ?1]}, '$maxDistance': ?2}}}")
+    List<Delivery> findPendingDeliveriesInArea(double longitude, double latitude, double maxDistanceMeters);
+
+    // Count active deliveries for partner
+    @Query(value = "{'deliveryPartnerId': ?0, 'status': {'$in': ['ASSIGNED', 'PICKED_UP', 'IN_TRANSIT']}}", count = true)
+    long countActiveDeliveriesByPartnerId(String deliveryPartnerId);
+
+    // Find deliveries by multiple order IDs (for merged orders)
+    List<Delivery> findByOrderIdIn(List<String> orderIds);
+
+    // Find deliveries by partner and date range
+    List<Delivery> findByDeliveryPartnerIdAndCreatedAtBetween(String partnerId, LocalDateTime startDate, LocalDateTime endDate);
 }

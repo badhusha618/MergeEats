@@ -6,6 +6,8 @@ import org.springframework.data.annotation.Id;
 import org.springframework.data.annotation.LastModifiedDate;
 import org.springframework.data.mongodb.core.mapping.Document;
 import org.springframework.data.mongodb.core.index.Indexed;
+import org.springframework.data.mongodb.core.index.GeoSpatialIndexType;
+import org.springframework.data.mongodb.core.index.GeoSpatialIndexed;
 
 import jakarta.validation.constraints.*;
 import java.time.LocalDateTime;
@@ -32,67 +34,85 @@ public class Delivery {
     @Indexed
     private String deliveryPartnerId;
 
+    @NotNull(message = "Delivery status is required")
+    @Indexed
+    private DeliveryStatus status = DeliveryStatus.PENDING;
+
     @NotNull(message = "Pickup address is required")
     private Address pickupAddress;
 
     @NotNull(message = "Delivery address is required")
     private Address deliveryAddress;
 
-    @NotNull(message = "Status is required")
-    private DeliveryStatus status = DeliveryStatus.PENDING;
+    // Current location for real-time tracking (GeoJSON Point)
+    @GeoSpatialIndexed(type = GeoSpatialIndexType.GEO_2DSPHERE)
+    private double[] currentLocation; // [longitude, latitude]
 
-    @DecimalMin(value = "0.0", message = "Distance cannot be negative")
-    private Double distanceKm;
-
-    @Min(value = 0, message = "Estimated time cannot be negative")
-    private Integer estimatedTimeMinutes;
+    @NotNull(message = "Order total is required")
+    @DecimalMin(value = "0.0", message = "Order total cannot be negative")
+    private Double orderTotal;
 
     @DecimalMin(value = "0.0", message = "Delivery fee cannot be negative")
-    private Double deliveryFee;
+    private Double deliveryFee = 0.0;
 
-    @DecimalMin(value = "0.0", message = "Partner earnings cannot be negative")
-    private Double partnerEarnings;
+    private Double estimatedDistance; // in kilometers
 
-    private String specialInstructions;
-
-    private String customerPhoneNumber;
-
-    private String restaurantPhoneNumber;
-
+    @NotNull(message = "Scheduled pickup time is required")
     private LocalDateTime scheduledPickupTime;
+
+    @NotNull(message = "Estimated delivery time is required")
+    private LocalDateTime estimatedDeliveryTime;
 
     private LocalDateTime actualPickupTime;
 
-    private LocalDateTime estimatedDeliveryTime;
-
     private LocalDateTime actualDeliveryTime;
 
-    private LocalDateTime assignedAt;
+    // Tracking information
+    private String trackingNumber;
 
-    private LocalDateTime acceptedAt;
+    private List<DeliveryUpdate> trackingUpdates;
 
-    private LocalDateTime pickedUpAt;
+    // Route optimization data
+    private List<double[]> optimizedRoute; // Array of [longitude, latitude] points
 
-    private LocalDateTime deliveredAt;
+    private Double routeDistance; // Total route distance in kilometers
 
-    private LocalDateTime cancelledAt;
+    private Integer estimatedDuration; // Estimated duration in minutes
 
-    private String cancellationReason;
+    // Batch delivery information
+    private Boolean isBatchDelivery = false;
 
-    // For merged orders
-    private Boolean isMergedDelivery = false;
-    
-    private List<String> mergedOrderIds;
+    private String batchId;
 
-    // Route optimization
-    private List<Address> routeWaypoints;
-    
-    private String optimizedRoute;
+    private List<String> batchOrderIds;
 
-    // Real-time tracking
-    private Address currentLocation;
-    
-    private LocalDateTime lastLocationUpdate;
+    // Special instructions
+    private String deliveryInstructions;
+
+    private String customerNotes;
+
+    // Contact information
+    private String customerPhone;
+
+    private String restaurantPhone;
+
+    private String deliveryPartnerPhone;
+
+    // Payment information
+    private Boolean isPaid = false;
+
+    private String paymentMethod;
+
+    private Boolean requiresSignature = false;
+
+    // Rating and feedback
+    private Integer customerRating; // 1-5 stars
+
+    private String customerFeedback;
+
+    private Integer restaurantRating; // 1-5 stars
+
+    private String restaurantFeedback;
 
     @CreatedDate
     private LocalDateTime createdAt;
@@ -104,12 +124,17 @@ public class Delivery {
     public Delivery() {}
 
     public Delivery(String orderId, String customerId, String restaurantId, 
-                   Address pickupAddress, Address deliveryAddress) {
+                   Address pickupAddress, Address deliveryAddress, Double orderTotal,
+                   LocalDateTime scheduledPickupTime, LocalDateTime estimatedDeliveryTime) {
         this.orderId = orderId;
         this.customerId = customerId;
         this.restaurantId = restaurantId;
         this.pickupAddress = pickupAddress;
         this.deliveryAddress = deliveryAddress;
+        this.orderTotal = orderTotal;
+        this.scheduledPickupTime = scheduledPickupTime;
+        this.estimatedDeliveryTime = estimatedDeliveryTime;
+        this.status = DeliveryStatus.PENDING;
     }
 
     // Getters and Setters
@@ -153,6 +178,14 @@ public class Delivery {
         this.deliveryPartnerId = deliveryPartnerId;
     }
 
+    public DeliveryStatus getStatus() {
+        return status;
+    }
+
+    public void setStatus(DeliveryStatus status) {
+        this.status = status;
+    }
+
     public Address getPickupAddress() {
         return pickupAddress;
     }
@@ -169,28 +202,20 @@ public class Delivery {
         this.deliveryAddress = deliveryAddress;
     }
 
-    public DeliveryStatus getStatus() {
-        return status;
+    public double[] getCurrentLocation() {
+        return currentLocation;
     }
 
-    public void setStatus(DeliveryStatus status) {
-        this.status = status;
+    public void setCurrentLocation(double[] currentLocation) {
+        this.currentLocation = currentLocation;
     }
 
-    public Double getDistanceKm() {
-        return distanceKm;
+    public Double getOrderTotal() {
+        return orderTotal;
     }
 
-    public void setDistanceKm(Double distanceKm) {
-        this.distanceKm = distanceKm;
-    }
-
-    public Integer getEstimatedTimeMinutes() {
-        return estimatedTimeMinutes;
-    }
-
-    public void setEstimatedTimeMinutes(Integer estimatedTimeMinutes) {
-        this.estimatedTimeMinutes = estimatedTimeMinutes;
+    public void setOrderTotal(Double orderTotal) {
+        this.orderTotal = orderTotal;
     }
 
     public Double getDeliveryFee() {
@@ -201,36 +226,12 @@ public class Delivery {
         this.deliveryFee = deliveryFee;
     }
 
-    public Double getPartnerEarnings() {
-        return partnerEarnings;
+    public Double getEstimatedDistance() {
+        return estimatedDistance;
     }
 
-    public void setPartnerEarnings(Double partnerEarnings) {
-        this.partnerEarnings = partnerEarnings;
-    }
-
-    public String getSpecialInstructions() {
-        return specialInstructions;
-    }
-
-    public void setSpecialInstructions(String specialInstructions) {
-        this.specialInstructions = specialInstructions;
-    }
-
-    public String getCustomerPhoneNumber() {
-        return customerPhoneNumber;
-    }
-
-    public void setCustomerPhoneNumber(String customerPhoneNumber) {
-        this.customerPhoneNumber = customerPhoneNumber;
-    }
-
-    public String getRestaurantPhoneNumber() {
-        return restaurantPhoneNumber;
-    }
-
-    public void setRestaurantPhoneNumber(String restaurantPhoneNumber) {
-        this.restaurantPhoneNumber = restaurantPhoneNumber;
+    public void setEstimatedDistance(Double estimatedDistance) {
+        this.estimatedDistance = estimatedDistance;
     }
 
     public LocalDateTime getScheduledPickupTime() {
@@ -241,20 +242,20 @@ public class Delivery {
         this.scheduledPickupTime = scheduledPickupTime;
     }
 
-    public LocalDateTime getActualPickupTime() {
-        return actualPickupTime;
-    }
-
-    public void setActualPickupTime(LocalDateTime actualPickupTime) {
-        this.actualPickupTime = actualPickupTime;
-    }
-
     public LocalDateTime getEstimatedDeliveryTime() {
         return estimatedDeliveryTime;
     }
 
     public void setEstimatedDeliveryTime(LocalDateTime estimatedDeliveryTime) {
         this.estimatedDeliveryTime = estimatedDeliveryTime;
+    }
+
+    public LocalDateTime getActualPickupTime() {
+        return actualPickupTime;
+    }
+
+    public void setActualPickupTime(LocalDateTime actualPickupTime) {
+        this.actualPickupTime = actualPickupTime;
     }
 
     public LocalDateTime getActualDeliveryTime() {
@@ -265,100 +266,164 @@ public class Delivery {
         this.actualDeliveryTime = actualDeliveryTime;
     }
 
-    public LocalDateTime getAssignedAt() {
-        return assignedAt;
+    public String getTrackingNumber() {
+        return trackingNumber;
     }
 
-    public void setAssignedAt(LocalDateTime assignedAt) {
-        this.assignedAt = assignedAt;
+    public void setTrackingNumber(String trackingNumber) {
+        this.trackingNumber = trackingNumber;
     }
 
-    public LocalDateTime getAcceptedAt() {
-        return acceptedAt;
+    public List<DeliveryUpdate> getTrackingUpdates() {
+        return trackingUpdates;
     }
 
-    public void setAcceptedAt(LocalDateTime acceptedAt) {
-        this.acceptedAt = acceptedAt;
+    public void setTrackingUpdates(List<DeliveryUpdate> trackingUpdates) {
+        this.trackingUpdates = trackingUpdates;
     }
 
-    public LocalDateTime getPickedUpAt() {
-        return pickedUpAt;
-    }
-
-    public void setPickedUpAt(LocalDateTime pickedUpAt) {
-        this.pickedUpAt = pickedUpAt;
-    }
-
-    public LocalDateTime getDeliveredAt() {
-        return deliveredAt;
-    }
-
-    public void setDeliveredAt(LocalDateTime deliveredAt) {
-        this.deliveredAt = deliveredAt;
-    }
-
-    public LocalDateTime getCancelledAt() {
-        return cancelledAt;
-    }
-
-    public void setCancelledAt(LocalDateTime cancelledAt) {
-        this.cancelledAt = cancelledAt;
-    }
-
-    public String getCancellationReason() {
-        return cancellationReason;
-    }
-
-    public void setCancellationReason(String cancellationReason) {
-        this.cancellationReason = cancellationReason;
-    }
-
-    public Boolean getIsMergedDelivery() {
-        return isMergedDelivery;
-    }
-
-    public void setIsMergedDelivery(Boolean isMergedDelivery) {
-        this.isMergedDelivery = isMergedDelivery;
-    }
-
-    public List<String> getMergedOrderIds() {
-        return mergedOrderIds;
-    }
-
-    public void setMergedOrderIds(List<String> mergedOrderIds) {
-        this.mergedOrderIds = mergedOrderIds;
-    }
-
-    public List<Address> getRouteWaypoints() {
-        return routeWaypoints;
-    }
-
-    public void setRouteWaypoints(List<Address> routeWaypoints) {
-        this.routeWaypoints = routeWaypoints;
-    }
-
-    public String getOptimizedRoute() {
+    public List<double[]> getOptimizedRoute() {
         return optimizedRoute;
     }
 
-    public void setOptimizedRoute(String optimizedRoute) {
+    public void setOptimizedRoute(List<double[]> optimizedRoute) {
         this.optimizedRoute = optimizedRoute;
     }
 
-    public Address getCurrentLocation() {
-        return currentLocation;
+    public Double getRouteDistance() {
+        return routeDistance;
     }
 
-    public void setCurrentLocation(Address currentLocation) {
-        this.currentLocation = currentLocation;
+    public void setRouteDistance(Double routeDistance) {
+        this.routeDistance = routeDistance;
     }
 
-    public LocalDateTime getLastLocationUpdate() {
-        return lastLocationUpdate;
+    public Integer getEstimatedDuration() {
+        return estimatedDuration;
     }
 
-    public void setLastLocationUpdate(LocalDateTime lastLocationUpdate) {
-        this.lastLocationUpdate = lastLocationUpdate;
+    public void setEstimatedDuration(Integer estimatedDuration) {
+        this.estimatedDuration = estimatedDuration;
+    }
+
+    public Boolean getIsBatchDelivery() {
+        return isBatchDelivery;
+    }
+
+    public void setIsBatchDelivery(Boolean isBatchDelivery) {
+        this.isBatchDelivery = isBatchDelivery;
+    }
+
+    public String getBatchId() {
+        return batchId;
+    }
+
+    public void setBatchId(String batchId) {
+        this.batchId = batchId;
+    }
+
+    public List<String> getBatchOrderIds() {
+        return batchOrderIds;
+    }
+
+    public void setBatchOrderIds(List<String> batchOrderIds) {
+        this.batchOrderIds = batchOrderIds;
+    }
+
+    public String getDeliveryInstructions() {
+        return deliveryInstructions;
+    }
+
+    public void setDeliveryInstructions(String deliveryInstructions) {
+        this.deliveryInstructions = deliveryInstructions;
+    }
+
+    public String getCustomerNotes() {
+        return customerNotes;
+    }
+
+    public void setCustomerNotes(String customerNotes) {
+        this.customerNotes = customerNotes;
+    }
+
+    public String getCustomerPhone() {
+        return customerPhone;
+    }
+
+    public void setCustomerPhone(String customerPhone) {
+        this.customerPhone = customerPhone;
+    }
+
+    public String getRestaurantPhone() {
+        return restaurantPhone;
+    }
+
+    public void setRestaurantPhone(String restaurantPhone) {
+        this.restaurantPhone = restaurantPhone;
+    }
+
+    public String getDeliveryPartnerPhone() {
+        return deliveryPartnerPhone;
+    }
+
+    public void setDeliveryPartnerPhone(String deliveryPartnerPhone) {
+        this.deliveryPartnerPhone = deliveryPartnerPhone;
+    }
+
+    public Boolean getIsPaid() {
+        return isPaid;
+    }
+
+    public void setIsPaid(Boolean isPaid) {
+        this.isPaid = isPaid;
+    }
+
+    public String getPaymentMethod() {
+        return paymentMethod;
+    }
+
+    public void setPaymentMethod(String paymentMethod) {
+        this.paymentMethod = paymentMethod;
+    }
+
+    public Boolean getRequiresSignature() {
+        return requiresSignature;
+    }
+
+    public void setRequiresSignature(Boolean requiresSignature) {
+        this.requiresSignature = requiresSignature;
+    }
+
+    public Integer getCustomerRating() {
+        return customerRating;
+    }
+
+    public void setCustomerRating(Integer customerRating) {
+        this.customerRating = customerRating;
+    }
+
+    public String getCustomerFeedback() {
+        return customerFeedback;
+    }
+
+    public void setCustomerFeedback(String customerFeedback) {
+        this.customerFeedback = customerFeedback;
+    }
+
+    public Integer getRestaurantRating() {
+        return restaurantRating;
+    }
+
+    public void setRestaurantRating(Integer restaurantRating) {
+        this.restaurantRating = restaurantRating;
+    }
+
+    public String getRestaurantFeedback() {
+        return restaurantFeedback;
+    }
+
+    public void setRestaurantFeedback(String restaurantFeedback) {
+        this.restaurantFeedback = restaurantFeedback;
     }
 
     public LocalDateTime getCreatedAt() {
@@ -375,5 +440,24 @@ public class Delivery {
 
     public void setUpdatedAt(LocalDateTime updatedAt) {
         this.updatedAt = updatedAt;
+    }
+
+    // Helper methods
+    public boolean isActive() {
+        return status == DeliveryStatus.ASSIGNED || 
+               status == DeliveryStatus.PICKED_UP || 
+               status == DeliveryStatus.IN_TRANSIT;
+    }
+
+    public boolean isCompleted() {
+        return status == DeliveryStatus.DELIVERED;
+    }
+
+    public boolean isCancelled() {
+        return status == DeliveryStatus.CANCELLED;
+    }
+
+    public void updateLocation(double longitude, double latitude) {
+        this.currentLocation = new double[]{longitude, latitude};
     }
 }

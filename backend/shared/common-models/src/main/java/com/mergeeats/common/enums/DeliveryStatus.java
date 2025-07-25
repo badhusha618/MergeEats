@@ -1,17 +1,15 @@
 package com.mergeeats.common.enums;
 
-import java.util.Arrays;
-import java.util.List;
-
 public enum DeliveryStatus {
     PENDING("Delivery is pending assignment"),
     ASSIGNED("Delivery has been assigned to a partner"),
     ACCEPTED("Delivery partner has accepted the delivery"),
     PICKED_UP("Order has been picked up from restaurant"),
-    IN_TRANSIT("Order is in transit to customer"),
+    IN_TRANSIT("Delivery is in transit to customer"),
     DELIVERED("Order has been delivered successfully"),
     CANCELLED("Delivery has been cancelled"),
-    FAILED("Delivery attempt failed");
+    FAILED("Delivery attempt failed"),
+    RETURNED("Order was returned to restaurant");
 
     private final String description;
 
@@ -23,18 +21,7 @@ public enum DeliveryStatus {
         return description;
     }
 
-    public boolean isActive() {
-        return Arrays.asList(PENDING, ASSIGNED, ACCEPTED, PICKED_UP, IN_TRANSIT).contains(this);
-    }
-
-    public boolean isCompleted() {
-        return this == DELIVERED;
-    }
-
-    public boolean isCancelled() {
-        return this == CANCELLED || this == FAILED;
-    }
-
+    // Helper methods for status transitions
     public boolean canTransitionTo(DeliveryStatus newStatus) {
         switch (this) {
             case PENDING:
@@ -44,23 +31,24 @@ public enum DeliveryStatus {
             case ACCEPTED:
                 return newStatus == PICKED_UP || newStatus == CANCELLED;
             case PICKED_UP:
-                return newStatus == IN_TRANSIT || newStatus == CANCELLED;
+                return newStatus == IN_TRANSIT || newStatus == CANCELLED || newStatus == FAILED;
             case IN_TRANSIT:
-                return newStatus == DELIVERED || newStatus == FAILED;
+                return newStatus == DELIVERED || newStatus == FAILED || newStatus == RETURNED;
             case DELIVERED:
             case CANCELLED:
             case FAILED:
+            case RETURNED:
                 return false; // Terminal states
             default:
                 return false;
         }
     }
 
-    public static List<DeliveryStatus> getActiveStatuses() {
-        return Arrays.asList(PENDING, ASSIGNED, ACCEPTED, PICKED_UP, IN_TRANSIT);
+    public boolean isTerminal() {
+        return this == DELIVERED || this == CANCELLED || this == FAILED || this == RETURNED;
     }
 
-    public static List<DeliveryStatus> getCompletedStatuses() {
-        return Arrays.asList(DELIVERED, CANCELLED, FAILED);
+    public boolean isActive() {
+        return this == ASSIGNED || this == ACCEPTED || this == PICKED_UP || this == IN_TRANSIT;
     }
 }

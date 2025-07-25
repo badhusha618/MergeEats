@@ -1,0 +1,7 @@
+com/mergeeats/common/models/Address.class
+com/mergeeats/common/enums/PaymentStatus.class
+com/mergeeats/common/models/Restaurant.class
+com/mergeeats/common/models/OrderItem.class
+com/mergeeats/common/models/User.class
+com/mergeeats/common/models/Order.class
+com/mergeeats/common/enums/OrderStatus.class

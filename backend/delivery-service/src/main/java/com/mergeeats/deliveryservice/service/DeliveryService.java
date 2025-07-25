@@ -1,83 +1,87 @@
 package com.mergeeats.deliveryservice.service;
 
 import com.mergeeats.common.models.Delivery;
-import com.mergeeats.common.models.DeliveryPartner;
-import com.mergeeats.common.models.Address;
+import com.mergeeats.common.models.DeliveryUpdate;
 import com.mergeeats.common.enums.DeliveryStatus;
-import com.mergeeats.common.enums.DeliveryPartnerStatus;
 import com.mergeeats.deliveryservice.repository.DeliveryRepository;
-import com.mergeeats.deliveryservice.repository.DeliveryPartnerRepository;
 import com.mergeeats.deliveryservice.dto.CreateDeliveryRequest;
-
+import com.mergeeats.deliveryservice.dto.UpdateLocationRequest;
+import com.mergeeats.deliveryservice.dto.AssignDeliveryRequest;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.beans.factory.annotation.Value;
 import org.springframework.kafka.core.KafkaTemplate;
 import org.springframework.stereotype.Service;
-import org.springframework.transaction.annotation.Transactional;
+import org.springframework.data.redis.core.RedisTemplate;
 
 import java.time.LocalDateTime;
 import java.util.*;
+import java.util.concurrent.TimeUnit;
 import java.util.stream.Collectors;
 
 @Service
-@Transactional
 public class DeliveryService {
 
     @Autowired
     private DeliveryRepository deliveryRepository;
 
     @Autowired
-    private DeliveryPartnerRepository deliveryPartnerRepository;
-
-    @Autowired
     private KafkaTemplate<String, Object> kafkaTemplate;
 
+    @Autowired
+    private RedisTemplate<String, Object> redisTemplate;
+
     @Value("${delivery.assignment.max-distance-km:10.0}")
-    private Double maxAssignmentDistance;
+    private double maxAssignmentDistance;
 
     @Value("${delivery.assignment.max-orders-per-partner:5}")
-    private Integer maxOrdersPerPartner;
+    private int maxOrdersPerPartner;
 
     @Value("${delivery.assignment.auto-assignment-enabled:true}")
-    private Boolean autoAssignmentEnabled;
+    private boolean autoAssignmentEnabled;
 
-    // Create delivery
+    @Value("${delivery.tracking.location-cache-ttl-minutes:5}")
+    private int locationCacheTtl;
+
+    // Create new delivery
     public Delivery createDelivery(CreateDeliveryRequest request) {
-        Delivery delivery = new Delivery();
-        delivery.setOrderId(request.getOrderId());
-        delivery.setCustomerId(request.getCustomerId());
-        delivery.setRestaurantId(request.getRestaurantId());
-        delivery.setPickupAddress(request.getPickupAddress());
-        delivery.setDeliveryAddress(request.getDeliveryAddress());
-        delivery.setDeliveryFee(request.getDeliveryFee());
-        delivery.setSpecialInstructions(request.getSpecialInstructions());
-        delivery.setCustomerPhoneNumber(request.getCustomerPhoneNumber());
-        delivery.setRestaurantPhoneNumber(request.getRestaurantPhoneNumber());
-        delivery.setScheduledPickupTime(request.getScheduledPickupTime());
-        delivery.setEstimatedDeliveryTime(request.getEstimatedDeliveryTime());
+        Delivery delivery = new Delivery(
+            request.getOrderId(),
+            request.getCustomerId(),
+            request.getRestaurantId(),
+            request.getPickupAddress(),
+            request.getDeliveryAddress(),
+            request.getOrderTotal(),
+            request.getScheduledPickupTime(),
+            request.getEstimatedDeliveryTime()
+        );
 
-        // Calculate distance and estimated time
-        Double distance = calculateDistance(request.getPickupAddress(), request.getDeliveryAddress());
-        delivery.setDistanceKm(distance);
-        
-        if (delivery.getEstimatedTimeMinutes() == null) {
-            delivery.setEstimatedTimeMinutes(calculateEstimatedTime(distance));
-        }
+        delivery.setDeliveryFee(request.getDeliveryFee());
+        delivery.setDeliveryInstructions(request.getDeliveryInstructions());
+        delivery.setCustomerPhone(request.getCustomerPhone());
+        delivery.setRestaurantPhone(request.getRestaurantPhone());
+        delivery.setTrackingNumber(generateTrackingNumber());
+
+        // Calculate estimated distance
+        double distance = calculateDistance(
+            request.getPickupAddress().getLatitude(),
+            request.getPickupAddress().getLongitude(),
+            request.getDeliveryAddress().getLatitude(),
+            request.getDeliveryAddress().getLongitude()
+        );
+        delivery.setEstimatedDistance(distance);
 
         delivery = deliveryRepository.save(delivery);
 
+        // Add initial tracking update
+        addTrackingUpdate(delivery, DeliveryStatus.PENDING, "Delivery created and pending assignment");
+
+        // Publish delivery created event
+        publishDeliveryEvent("delivery.created", delivery);
+
         // Auto-assign if enabled
         if (autoAssignmentEnabled) {
-            try {
-                assignDeliveryPartner(delivery.getDeliveryId());
-            } catch (Exception e) {
-                // Log error but don't fail delivery creation
-                System.err.println("Auto-assignment failed for delivery " + delivery.getDeliveryId() + ": " + e.getMessage());
-            }
+            autoAssignDelivery(delivery.getDeliveryId());
         }
-
-        // Publish event
-        publishDeliveryEvent("delivery.created", delivery);
 
         return delivery;
     }
@@ -92,138 +96,176 @@ public class DeliveryService {
         return deliveryRepository.findByOrderId(orderId);
     }
 
-    // Assign delivery partner
-    public Delivery assignDeliveryPartner(String deliveryId) {
+    // Get deliveries by delivery partner
+    public List<Delivery> getDeliveriesByPartnerId(String partnerId) {
+        return deliveryRepository.findByDeliveryPartnerId(partnerId);
+    }
+
+    // Get active deliveries for partner
+    public List<Delivery> getActiveDeliveriesForPartner(String partnerId) {
+        return deliveryRepository.findActiveDeliveriesByPartnerId(partnerId);
+    }
+
+    // Assign delivery to partner
+    public Delivery assignDelivery(String deliveryId, AssignDeliveryRequest request) {
         Optional<Delivery> deliveryOpt = deliveryRepository.findById(deliveryId);
         if (deliveryOpt.isEmpty()) {
-            throw new RuntimeException("Delivery not found: " + deliveryId);
+            throw new RuntimeException("Delivery not found with ID: " + deliveryId);
         }
 
         Delivery delivery = deliveryOpt.get();
+        
         if (delivery.getStatus() != DeliveryStatus.PENDING) {
-            throw new RuntimeException("Delivery is not in PENDING status");
+            throw new RuntimeException("Delivery is not in pending status");
         }
 
-        // Find suitable delivery partner
-        DeliveryPartner partner = findBestDeliveryPartner(delivery);
-        if (partner == null) {
-            throw new RuntimeException("No available delivery partner found");
+        // Check if partner can take more deliveries
+        long activeDeliveries = deliveryRepository.countActiveDeliveriesByPartnerId(request.getDeliveryPartnerId());
+        if (activeDeliveries >= maxOrdersPerPartner) {
+            throw new RuntimeException("Delivery partner has reached maximum active deliveries");
         }
 
-        // Assign partner
-        delivery.setDeliveryPartnerId(partner.getPartnerId());
+        delivery.setDeliveryPartnerId(request.getDeliveryPartnerId());
+        delivery.setDeliveryPartnerPhone(request.getDeliveryPartnerPhone());
         delivery.setStatus(DeliveryStatus.ASSIGNED);
-        delivery.setAssignedAt(LocalDateTime.now());
-
-        // Calculate partner earnings (example: 70% of delivery fee)
-        if (delivery.getDeliveryFee() != null) {
-            delivery.setPartnerEarnings(delivery.getDeliveryFee() * 0.7);
-        }
 
         delivery = deliveryRepository.save(delivery);
 
-        // Update partner status
-        partner.setStatus(DeliveryPartnerStatus.BUSY);
-        deliveryPartnerRepository.save(partner);
+        // Add tracking update
+        addTrackingUpdate(delivery, DeliveryStatus.ASSIGNED, 
+            "Delivery assigned to partner: " + request.getDeliveryPartnerId());
 
-        // Publish events
+        // Publish assignment event
         publishDeliveryEvent("delivery.assigned", delivery);
-        publishPartnerEvent("partner.assigned", partner, delivery);
 
         return delivery;
     }
 
-    // Update delivery status
-    public Delivery updateDeliveryStatus(String deliveryId, DeliveryStatus newStatus) {
+    // Auto-assign delivery to nearest available partner
+    public boolean autoAssignDelivery(String deliveryId) {
         Optional<Delivery> deliveryOpt = deliveryRepository.findById(deliveryId);
         if (deliveryOpt.isEmpty()) {
-            throw new RuntimeException("Delivery not found: " + deliveryId);
+            return false;
         }
 
         Delivery delivery = deliveryOpt.get();
-        DeliveryStatus oldStatus = delivery.getStatus();
-
-        // Validate status transition
-        if (!oldStatus.canTransitionTo(newStatus)) {
-            throw new RuntimeException("Invalid status transition from " + oldStatus + " to " + newStatus);
+        if (delivery.getStatus() != DeliveryStatus.PENDING) {
+            return false;
         }
 
-        // Update status and timestamps
-        delivery.setStatus(newStatus);
-        LocalDateTime now = LocalDateTime.now();
+        // Find available partners near pickup location
+        double pickupLat = delivery.getPickupAddress().getLatitude();
+        double pickupLng = delivery.getPickupAddress().getLongitude();
+        double maxDistanceMeters = maxAssignmentDistance * 1000; // Convert to meters
 
+        // This would typically query a separate delivery partner service
+        // For now, we'll simulate finding available partners
+        List<String> availablePartners = findAvailablePartnersNearLocation(pickupLat, pickupLng, maxDistanceMeters);
+
+        if (!availablePartners.isEmpty()) {
+            String selectedPartnerId = availablePartners.get(0); // Simple selection logic
+            
+            AssignDeliveryRequest assignRequest = new AssignDeliveryRequest();
+            assignRequest.setDeliveryPartnerId(selectedPartnerId);
+            assignRequest.setDeliveryPartnerPhone(""); // Would be fetched from partner service
+            
+            assignDelivery(deliveryId, assignRequest);
+            return true;
+        }
+
+        return false;
+    }
+
+    // Update delivery status
+    public Delivery updateDeliveryStatus(String deliveryId, DeliveryStatus newStatus, String message) {
+        Optional<Delivery> deliveryOpt = deliveryRepository.findById(deliveryId);
+        if (deliveryOpt.isEmpty()) {
+            throw new RuntimeException("Delivery not found with ID: " + deliveryId);
+        }
+
+        Delivery delivery = deliveryOpt.get();
+        
+        if (!delivery.getStatus().canTransitionTo(newStatus)) {
+            throw new RuntimeException("Invalid status transition from " + delivery.getStatus() + " to " + newStatus);
+        }
+
+        delivery.setStatus(newStatus);
+
+        // Set timestamps based on status
+        LocalDateTime now = LocalDateTime.now();
         switch (newStatus) {
-            case ACCEPTED:
-                delivery.setAcceptedAt(now);
-                break;
             case PICKED_UP:
-                delivery.setPickedUpAt(now);
                 delivery.setActualPickupTime(now);
                 break;
-            case IN_TRANSIT:
-                // Status is set when partner starts delivery
-                break;
             case DELIVERED:
-                delivery.setDeliveredAt(now);
                 delivery.setActualDeliveryTime(now);
-                updatePartnerStats(delivery);
-                break;
-            case CANCELLED:
-            case FAILED:
-                delivery.setCancelledAt(now);
                 break;
         }
 
         delivery = deliveryRepository.save(delivery);
 
-        // Update partner availability if delivery is completed
-        if (newStatus.isCompleted() || newStatus.isCancelled()) {
-            updatePartnerAvailability(delivery.getDeliveryPartnerId());
-        }
+        // Add tracking update
+        addTrackingUpdate(delivery, newStatus, message);
 
-        // Publish event
+        // Publish status update event
         publishDeliveryEvent("delivery.status.updated", delivery);
 
         return delivery;
     }
 
     // Update delivery location
-    public Delivery updateDeliveryLocation(String deliveryId, Address currentLocation) {
+    public void updateDeliveryLocation(String deliveryId, UpdateLocationRequest request) {
         Optional<Delivery> deliveryOpt = deliveryRepository.findById(deliveryId);
         if (deliveryOpt.isEmpty()) {
-            throw new RuntimeException("Delivery not found: " + deliveryId);
+            throw new RuntimeException("Delivery not found with ID: " + deliveryId);
         }
 
         Delivery delivery = deliveryOpt.get();
-        delivery.setCurrentLocation(currentLocation);
-        delivery.setLastLocationUpdate(LocalDateTime.now());
+        delivery.updateLocation(request.getLongitude(), request.getLatitude());
+        deliveryRepository.save(delivery);
 
+        // Cache location in Redis for real-time tracking
+        String cacheKey = "delivery:location:" + deliveryId;
+        Map<String, Object> locationData = new HashMap<>();
+        locationData.put("latitude", request.getLatitude());
+        locationData.put("longitude", request.getLongitude());
+        locationData.put("timestamp", LocalDateTime.now());
+        
+        redisTemplate.opsForValue().set(cacheKey, locationData, locationCacheTtl, TimeUnit.MINUTES);
+
+        // Publish location update event
+        publishDeliveryEvent("delivery.location.updated", delivery);
+    }
+
+    // Get real-time location from cache
+    public Map<String, Object> getDeliveryLocation(String deliveryId) {
+        String cacheKey = "delivery:location:" + deliveryId;
+        return (Map<String, Object>) redisTemplate.opsForValue().get(cacheKey);
+    }
+
+    // Cancel delivery
+    public Delivery cancelDelivery(String deliveryId, String reason) {
+        Optional<Delivery> deliveryOpt = deliveryRepository.findById(deliveryId);
+        if (deliveryOpt.isEmpty()) {
+            throw new RuntimeException("Delivery not found with ID: " + deliveryId);
+        }
+
+        Delivery delivery = deliveryOpt.get();
+        
+        if (delivery.getStatus().isTerminal()) {
+            throw new RuntimeException("Cannot cancel delivery in terminal status: " + delivery.getStatus());
+        }
+
+        delivery.setStatus(DeliveryStatus.CANCELLED);
         delivery = deliveryRepository.save(delivery);
 
-        // Publish real-time location update
-        publishLocationUpdate(delivery);
+        // Add tracking update
+        addTrackingUpdate(delivery, DeliveryStatus.CANCELLED, "Delivery cancelled: " + reason);
+
+        // Publish cancellation event
+        publishDeliveryEvent("delivery.cancelled", delivery);
 
         return delivery;
-    }
-
-    // Get deliveries by partner
-    public List<Delivery> getDeliveriesByPartnerId(String partnerId) {
-        return deliveryRepository.findByDeliveryPartnerId(partnerId);
-    }
-
-    // Get active deliveries by partner
-    public List<Delivery> getActiveDeliveriesByPartnerId(String partnerId) {
-        return deliveryRepository.findActiveDeliveriesByPartnerId(partnerId);
-    }
-
-    // Get deliveries by customer
-    public List<Delivery> getDeliveriesByCustomerId(String customerId) {
-        return deliveryRepository.findByCustomerId(customerId);
-    }
-
-    // Get deliveries by restaurant
-    public List<Delivery> getDeliveriesByRestaurantId(String restaurantId) {
-        return deliveryRepository.findByRestaurantId(restaurantId);
     }
 
     // Get deliveries by status
@@ -231,211 +273,110 @@ public class DeliveryService {
         return deliveryRepository.findByStatus(status);
     }
 
-    // Cancel delivery
-    public Delivery cancelDelivery(String deliveryId, String reason) {
-        Optional<Delivery> deliveryOpt = deliveryRepository.findById(deliveryId);
-        if (deliveryOpt.isEmpty()) {
-            throw new RuntimeException("Delivery not found: " + deliveryId);
-        }
-
-        Delivery delivery = deliveryOpt.get();
-        if (delivery.getStatus().isCompleted()) {
-            throw new RuntimeException("Cannot cancel completed delivery");
-        }
-
-        delivery.setStatus(DeliveryStatus.CANCELLED);
-        delivery.setCancelledAt(LocalDateTime.now());
-        delivery.setCancellationReason(reason);
-
-        delivery = deliveryRepository.save(delivery);
-
-        // Update partner availability
-        if (delivery.getDeliveryPartnerId() != null) {
-            updatePartnerAvailability(delivery.getDeliveryPartnerId());
-        }
-
-        // Publish event
-        publishDeliveryEvent("delivery.cancelled", delivery);
-
-        return delivery;
+    // Get overdue deliveries
+    public List<Delivery> getOverdueDeliveries() {
+        return deliveryRepository.findOverdueDeliveries(LocalDateTime.now());
     }
 
-    // Find best delivery partner
-    private DeliveryPartner findBestDeliveryPartner(Delivery delivery) {
-        Address pickupLocation = delivery.getPickupAddress();
-        if (pickupLocation.getLatitude() == null || pickupLocation.getLongitude() == null) {
-            return null;
-        }
+    // Get delivery statistics for partner
+    public Map<String, Object> getPartnerStatistics(String partnerId, LocalDateTime startDate, LocalDateTime endDate) {
+        List<Delivery> deliveries = deliveryRepository.findByDeliveryPartnerIdAndCreatedAtBetween(
+            partnerId, startDate, endDate);
 
-        // Calculate search area
-        double[] bounds = calculateSearchBounds(pickupLocation.getLatitude(), pickupLocation.getLongitude(), maxAssignmentDistance);
+        Map<String, Object> stats = new HashMap<>();
+        stats.put("totalDeliveries", deliveries.size());
+        stats.put("completedDeliveries", deliveries.stream().filter(d -> d.getStatus() == DeliveryStatus.DELIVERED).count());
+        stats.put("cancelledDeliveries", deliveries.stream().filter(d -> d.getStatus() == DeliveryStatus.CANCELLED).count());
+        stats.put("averageRating", deliveries.stream()
+            .filter(d -> d.getCustomerRating() != null)
+            .mapToInt(Delivery::getCustomerRating)
+            .average().orElse(0.0));
+        stats.put("totalEarnings", deliveries.stream()
+            .filter(d -> d.getStatus() == DeliveryStatus.DELIVERED)
+            .mapToDouble(Delivery::getDeliveryFee)
+            .sum());
 
-        // Find available partners in area
-        List<DeliveryPartner> availablePartners = deliveryPartnerRepository.findPartnersForAssignment(
-            bounds[0], bounds[1], bounds[2], bounds[3]
-        );
-
-        if (availablePartners.isEmpty()) {
-            return null;
-        }
-
-        // Filter partners by capacity
-        availablePartners = availablePartners.stream()
-            .filter(partner -> {
-                long activeDeliveries = deliveryRepository.countByDeliveryPartnerIdAndStatus(
-                    partner.getPartnerId(), DeliveryStatus.ASSIGNED
-                );
-                return activeDeliveries < maxOrdersPerPartner;
-            })
-            .collect(Collectors.toList());
-
-        if (availablePartners.isEmpty()) {
-            return null;
-        }
-
-        // Find best partner based on distance and rating
-        return availablePartners.stream()
-            .min((p1, p2) -> {
-                double distance1 = calculateDistance(pickupLocation, p1.getCurrentLocation());
-                double distance2 = calculateDistance(pickupLocation, p2.getCurrentLocation());
-                
-                // Weighted score: 70% distance, 30% rating
-                double score1 = distance1 * 0.7 - (p1.getRating() * 0.3);
-                double score2 = distance2 * 0.7 - (p2.getRating() * 0.3);
-                
-                return Double.compare(score1, score2);
-            })
-            .orElse(null);
+        return stats;
     }
 
-    // Calculate distance between two addresses
-    private Double calculateDistance(Address addr1, Address addr2) {
-        if (addr1 == null || addr2 == null || 
-            addr1.getLatitude() == null || addr1.getLongitude() == null ||
-            addr2.getLatitude() == null || addr2.getLongitude() == null) {
-            return 0.0;
+    // Batch delivery assignment
+    public List<Delivery> createBatchDelivery(List<String> orderIds, String partnerId) {
+        List<Delivery> deliveries = deliveryRepository.findByOrderIdIn(orderIds);
+        
+        if (deliveries.size() != orderIds.size()) {
+            throw new RuntimeException("Some orders not found for batch delivery");
         }
 
-        // Haversine formula
-        double lat1Rad = Math.toRadians(addr1.getLatitude());
-        double lat2Rad = Math.toRadians(addr2.getLatitude());
-        double deltaLatRad = Math.toRadians(addr2.getLatitude() - addr1.getLatitude());
-        double deltaLngRad = Math.toRadians(addr2.getLongitude() - addr1.getLongitude());
-
-        double a = Math.sin(deltaLatRad / 2) * Math.sin(deltaLatRad / 2) +
-                   Math.cos(lat1Rad) * Math.cos(lat2Rad) *
-                   Math.sin(deltaLngRad / 2) * Math.sin(deltaLngRad / 2);
-        double c = 2 * Math.atan2(Math.sqrt(a), Math.sqrt(1 - a));
-
-        return 6371.0 * c; // Earth's radius in kilometers
-    }
-
-    // Calculate estimated delivery time
-    private Integer calculateEstimatedTime(Double distanceKm) {
-        if (distanceKm == null || distanceKm <= 0) {
-            return 30; // Default 30 minutes
-        }
-
-        // Estimate: 25 km/h average speed + 10 minutes preparation/pickup time
-        return (int) Math.ceil((distanceKm / 25.0) * 60) + 10;
-    }
-
-    // Calculate search bounds for partner lookup
-    private double[] calculateSearchBounds(Double lat, Double lng, Double radiusKm) {
-        double latOffset = radiusKm / 111.0; // Approximate km per degree latitude
-        double lngOffset = radiusKm / (111.0 * Math.cos(Math.toRadians(lat))); // Adjust for longitude
-
-        return new double[] {
-            lat - latOffset,  // minLat
-            lat + latOffset,  // maxLat
-            lng - lngOffset,  // minLng
-            lng + lngOffset   // maxLng
-        };
-    }
-
-    // Update partner stats after successful delivery
-    private void updatePartnerStats(Delivery delivery) {
-        if (delivery.getDeliveryPartnerId() == null) return;
-
-        Optional<DeliveryPartner> partnerOpt = deliveryPartnerRepository.findById(delivery.getDeliveryPartnerId());
-        if (partnerOpt.isPresent()) {
-            DeliveryPartner partner = partnerOpt.get();
-            partner.setTotalDeliveries(partner.getTotalDeliveries() + 1);
-            
-            if (delivery.getPartnerEarnings() != null) {
-                partner.setTotalEarnings(partner.getTotalEarnings() + delivery.getPartnerEarnings());
+        String batchId = UUID.randomUUID().toString();
+        
+        for (Delivery delivery : deliveries) {
+            if (delivery.getStatus() != DeliveryStatus.PENDING) {
+                throw new RuntimeException("All deliveries must be in pending status for batch assignment");
             }
             
-            partner.setLastActiveTime(LocalDateTime.now());
-            deliveryPartnerRepository.save(partner);
+            delivery.setDeliveryPartnerId(partnerId);
+            delivery.setIsBatchDelivery(true);
+            delivery.setBatchId(batchId);
+            delivery.setBatchOrderIds(orderIds);
+            delivery.setStatus(DeliveryStatus.ASSIGNED);
         }
+
+        deliveries = deliveryRepository.saveAll(deliveries);
+
+        // Publish batch assignment event
+        Map<String, Object> batchData = new HashMap<>();
+        batchData.put("batchId", batchId);
+        batchData.put("partnerId", partnerId);
+        batchData.put("deliveries", deliveries);
+        kafkaTemplate.send("delivery.batch.assigned", batchData);
+
+        return deliveries;
     }
 
-    // Update partner availability after delivery completion
-    private void updatePartnerAvailability(String partnerId) {
-        if (partnerId == null) return;
-
-        Optional<DeliveryPartner> partnerOpt = deliveryPartnerRepository.findById(partnerId);
-        if (partnerOpt.isPresent()) {
-            DeliveryPartner partner = partnerOpt.get();
-            
-            // Check if partner has other active deliveries
-            long activeDeliveries = deliveryRepository.findActiveDeliveriesByPartnerId(partnerId).size();
-            
-            if (activeDeliveries == 0) {
-                partner.setStatus(DeliveryPartnerStatus.ONLINE);
-                deliveryPartnerRepository.save(partner);
-            }
+    // Helper methods
+    private void addTrackingUpdate(Delivery delivery, DeliveryStatus status, String message) {
+        if (delivery.getTrackingUpdates() == null) {
+            delivery.setTrackingUpdates(new ArrayList<>());
         }
+
+        DeliveryUpdate update = new DeliveryUpdate(status, message, LocalDateTime.now());
+        if (delivery.getCurrentLocation() != null) {
+            update.setLocation(delivery.getCurrentLocation());
+        }
+
+        delivery.getTrackingUpdates().add(update);
+        deliveryRepository.save(delivery);
     }
 
-    // Publish delivery event to Kafka
     private void publishDeliveryEvent(String eventType, Delivery delivery) {
-        try {
-            Map<String, Object> event = new HashMap<>();
-            event.put("eventType", eventType);
-            event.put("deliveryId", delivery.getDeliveryId());
-            event.put("orderId", delivery.getOrderId());
-            event.put("customerId", delivery.getCustomerId());
-            event.put("restaurantId", delivery.getRestaurantId());
-            event.put("deliveryPartnerId", delivery.getDeliveryPartnerId());
-            event.put("status", delivery.getStatus().name());
-            event.put("timestamp", LocalDateTime.now());
-
-            kafkaTemplate.send("delivery-events", event);
-        } catch (Exception e) {
-            System.err.println("Failed to publish delivery event: " + e.getMessage());
-        }
+        Map<String, Object> event = new HashMap<>();
+        event.put("eventType", eventType);
+        event.put("deliveryId", delivery.getDeliveryId());
+        event.put("orderId", delivery.getOrderId());
+        event.put("status", delivery.getStatus());
+        event.put("timestamp", LocalDateTime.now());
+        
+        kafkaTemplate.send("delivery.events", event);
     }
 
-    // Publish partner event to Kafka
-    private void publishPartnerEvent(String eventType, DeliveryPartner partner, Delivery delivery) {
-        try {
-            Map<String, Object> event = new HashMap<>();
-            event.put("eventType", eventType);
-            event.put("partnerId", partner.getPartnerId());
-            event.put("deliveryId", delivery.getDeliveryId());
-            event.put("orderId", delivery.getOrderId());
-            event.put("timestamp", LocalDateTime.now());
-
-            kafkaTemplate.send("delivery-partner-events", event);
-        } catch (Exception e) {
-            System.err.println("Failed to publish partner event: " + e.getMessage());
-        }
+    private String generateTrackingNumber() {
+        return "TRK" + System.currentTimeMillis() + (int)(Math.random() * 1000);
     }
 
-    // Publish real-time location update
-    private void publishLocationUpdate(Delivery delivery) {
-        try {
-            Map<String, Object> locationUpdate = new HashMap<>();
-            locationUpdate.put("deliveryId", delivery.getDeliveryId());
-            locationUpdate.put("orderId", delivery.getOrderId());
-            locationUpdate.put("currentLocation", delivery.getCurrentLocation());
-            locationUpdate.put("timestamp", delivery.getLastLocationUpdate());
+    private double calculateDistance(double lat1, double lon1, double lat2, double lon2) {
+        final int R = 6371; // Radius of the earth in km
+        double latDistance = Math.toRadians(lat2 - lat1);
+        double lonDistance = Math.toRadians(lon2 - lon1);
+        double a = Math.sin(latDistance / 2) * Math.sin(latDistance / 2)
+                + Math.cos(Math.toRadians(lat1)) * Math.cos(Math.toRadians(lat2))
+                * Math.sin(lonDistance / 2) * Math.sin(lonDistance / 2);
+        double c = 2 * Math.atan2(Math.sqrt(a), Math.sqrt(1 - a));
+        return R * c; // Distance in km
+    }
 
-            kafkaTemplate.send("delivery-location-updates", locationUpdate);
-        } catch (Exception e) {
-            System.err.println("Failed to publish location update: " + e.getMessage());
-        }
+    private List<String> findAvailablePartnersNearLocation(double latitude, double longitude, double maxDistanceMeters) {
+        // This would typically call an external delivery partner service
+        // For now, return a mock list
+        return Arrays.asList("partner1", "partner2", "partner3");
     }
 }

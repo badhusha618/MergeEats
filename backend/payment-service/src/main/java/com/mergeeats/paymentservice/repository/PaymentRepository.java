@@ -1,12 +1,12 @@
 package com.mergeeats.paymentservice.repository;
 
 import com.mergeeats.common.models.Payment;
-import com.mergeeats.common.models.Payment.PaymentMethod;
-import com.mergeeats.common.models.Payment.PaymentType;
 import com.mergeeats.common.enums.PaymentStatus;
+import com.mergeeats.common.enums.PaymentMethod;
 import org.springframework.data.mongodb.repository.MongoRepository;
 import org.springframework.data.mongodb.repository.Query;
 import org.springframework.stereotype.Repository;
+
 import java.time.LocalDateTime;
 import java.util.List;
 import java.util.Optional;
@@ -14,143 +14,69 @@ import java.util.Optional;
 @Repository
 public interface PaymentRepository extends MongoRepository<Payment, String> {
 
-    // Basic queries
+    // Find payments by order ID
     List<Payment> findByOrderId(String orderId);
     
-    List<Payment> findByUserId(String userId);
-    
-    Optional<Payment> findByGatewayTransactionId(String gatewayTransactionId);
-    
-    Optional<Payment> findByGatewayPaymentId(String gatewayPaymentId);
-    
+    // Find the latest payment for an order
+    Optional<Payment> findTopByOrderIdOrderByCreatedAtDesc(String orderId);
+
+    // Find payments by customer ID
+    List<Payment> findByCustomerId(String customerId);
+
+    // Find payments by status
     List<Payment> findByStatus(PaymentStatus status);
 
-    // Payment method queries
+    // Find payments by payment method
     List<Payment> findByPaymentMethod(PaymentMethod paymentMethod);
-    
-    List<Payment> findByPaymentMethodAndStatus(PaymentMethod paymentMethod, PaymentStatus status);
 
-    // Payment type queries
-    List<Payment> findByPaymentType(PaymentType paymentType);
-    
-    List<Payment> findByPaymentTypeAndStatus(PaymentType paymentType, PaymentStatus status);
+    // Find payments by gateway transaction ID
+    Optional<Payment> findByGatewayTransactionId(String gatewayTransactionId);
 
-    // User-specific queries
-    List<Payment> findByUserIdAndStatus(String userId, PaymentStatus status);
-    
-    List<Payment> findByUserIdAndPaymentMethod(String userId, PaymentMethod paymentMethod);
-    
-    @Query("{ 'userId': ?0, 'createdAt': { $gte: ?1, $lte: ?2 } }")
-    List<Payment> findByUserIdAndDateRange(String userId, LocalDateTime startDate, LocalDateTime endDate);
+    // Find payments by gateway and external transaction ID
+    Optional<Payment> findByPaymentGatewayAndGatewayTransactionId(String paymentGateway, String gatewayTransactionId);
 
-    // Order-specific queries
-    List<Payment> findByOrderIdAndStatus(String orderId, PaymentStatus status);
-    
-    @Query("{ 'orderId': ?0, 'status': { $in: ?1 } }")
-    List<Payment> findByOrderIdAndStatusIn(String orderId, List<PaymentStatus> statuses);
-
-    // Group payment queries
-    List<Payment> findByIsSplitPaymentTrue();
-    
-    List<Payment> findByGroupOrderId(String groupOrderId);
-    
-    List<Payment> findByGroupOrderIdAndStatus(String groupOrderId, PaymentStatus status);
-
-    // Amount-based queries
-    @Query("{ 'amount': { $gte: ?0, $lte: ?1 } }")
-    List<Payment> findByAmountBetween(Double minAmount, Double maxAmount);
-    
-    @Query("{ 'amount': { $gte: ?0 } }")
-    List<Payment> findByAmountGreaterThanEqual(Double minAmount);
-
-    // Time-based queries
+    // Find payments within date range
     List<Payment> findByCreatedAtBetween(LocalDateTime startDate, LocalDateTime endDate);
-    
-    List<Payment> findByProcessedAtBetween(LocalDateTime startDate, LocalDateTime endDate);
-    
-    List<Payment> findByCreatedAtAfter(LocalDateTime date);
-    
-    List<Payment> findByCreatedAtBefore(LocalDateTime date);
 
-    // Failed payment queries
-    @Query("{ 'status': 'FAILED', 'retryCount': { $lt: '$maxRetries' } }")
-    List<Payment> findFailedPaymentsEligibleForRetry();
-    
-    @Query("{ 'status': 'FAILED', 'nextRetryAt': { $lte: ?0 } }")
-    List<Payment> findFailedPaymentsDueForRetry(LocalDateTime currentTime);
+    // Find payments by customer and date range
+    List<Payment> findByCustomerIdAndCreatedAtBetween(String customerId, LocalDateTime startDate, LocalDateTime endDate);
 
-    // Refund queries
-    @Query("{ 'refundAmount': { $gt: 0 } }")
-    List<Payment> findPaymentsWithRefunds();
-    
-    @Query("{ 'refundAmount': { $lt: '$amount' }, 'refundAmount': { $gt: 0 } }")
-    List<Payment> findPartiallyRefundedPayments();
-    
-    @Query("{ 'refundAmount': '$amount', 'refundAmount': { $gt: 0 } }")
-    List<Payment> findFullyRefundedPayments();
+    // Find failed payments that can be retried
+    @Query("{'status': 'FAILED', 'retryCount': {'$lt': ?0}, 'createdAt': {'$gte': ?1}}")
+    List<Payment> findRetryableFailedPayments(int maxRetryCount, LocalDateTime minCreatedAt);
 
-    // Statistics queries
-    @Query(value = "{ 'status': ?0 }", count = true)
+    // Find pending payments older than specified time
+    @Query("{'status': 'PENDING', 'createdAt': {'$lt': ?0}}")
+    List<Payment> findExpiredPendingPayments(LocalDateTime expiredBefore);
+
+    // Find payments by amount range
+    List<Payment> findByAmountBetween(Double minAmount, Double maxAmount);
+
+    // Find refunded payments
+    List<Payment> findByIsRefunded(boolean isRefunded);
+
+    // Find payments by invoice number
+    Optional<Payment> findByInvoiceNumber(String invoiceNumber);
+
+    // Find payments requiring manual review (high retry count or specific conditions)
+    @Query("{'$or': [{'retryCount': {'$gte': ?0}}, {'status': 'FAILED', 'amount': {'$gte': ?1}}]}")
+    List<Payment> findPaymentsRequiringReview(int highRetryCount, Double highAmountThreshold);
+
+    // Count payments by status
     long countByStatus(PaymentStatus status);
-    
-    @Query(value = "{ 'paymentMethod': ?0 }", count = true)
+
+    // Count payments by payment method
     long countByPaymentMethod(PaymentMethod paymentMethod);
-    
-    @Query(value = "{ 'userId': ?0, 'status': 'COMPLETED' }", count = true)
-    long countCompletedPaymentsByUser(String userId);
 
-    // Revenue queries
-    @Query("{ 'status': 'COMPLETED', 'createdAt': { $gte: ?0, $lte: ?1 } }")
-    List<Payment> findCompletedPaymentsInDateRange(LocalDateTime startDate, LocalDateTime endDate);
-    
-    @Query("{ 'status': 'COMPLETED', 'paymentMethod': ?0, 'createdAt': { $gte: ?1, $lte: ?2 } }")
-    List<Payment> findCompletedPaymentsByMethodInDateRange(PaymentMethod paymentMethod, LocalDateTime startDate, LocalDateTime endDate);
+    // Find payments by multiple order IDs (for group orders)
+    List<Payment> findByOrderIdIn(List<String> orderIds);
 
-    // Gateway-specific queries
-    @Query("{ 'gatewayTransactionId': { $exists: true, $ne: null } }")
-    List<Payment> findPaymentsWithGatewayTransactionId();
-    
-    @Query("{ 'gatewayTransactionId': { $exists: false } }")
-    List<Payment> findPaymentsWithoutGatewayTransactionId();
+    // Calculate total amount by customer and date range
+    @Query(value = "{'customerId': ?0, 'status': 'COMPLETED', 'createdAt': {'$gte': ?1, '$lte': ?2}}", 
+           fields = "{'amount': 1}")
+    List<Payment> findCompletedPaymentsByCustomerAndDateRange(String customerId, LocalDateTime startDate, LocalDateTime endDate);
 
-    // Pending payment queries
-    @Query("{ 'status': 'PENDING', 'createdAt': { $lt: ?0 } }")
-    List<Payment> findPendingPaymentsOlderThan(LocalDateTime cutoffTime);
-    
-    @Query("{ 'status': 'PROCESSING', 'createdAt': { $lt: ?0 } }")
-    List<Payment> findProcessingPaymentsOlderThan(LocalDateTime cutoffTime);
-
-    // Fee analysis queries
-    @Query("{ 'platformFee': { $gt: 0 }, 'status': 'COMPLETED' }")
-    List<Payment> findCompletedPaymentsWithPlatformFee();
-    
-    @Query("{ 'gatewayFee': { $gt: 0 }, 'status': 'COMPLETED' }")
-    List<Payment> findCompletedPaymentsWithGatewayFee();
-
-    // Complex aggregation queries
-    @Query("{ 'userId': ?0, 'status': 'COMPLETED', 'createdAt': { $gte: ?1 } }")
-    List<Payment> findUserCompletedPaymentsSince(String userId, LocalDateTime since);
-    
-    @Query("{ 'orderId': { $in: ?0 }, 'status': { $in: ?1 } }")
-    List<Payment> findPaymentsByOrderIdsAndStatuses(List<String> orderIds, List<PaymentStatus> statuses);
-
-    // Currency-based queries
-    List<Payment> findByCurrency(String currency);
-    
-    @Query("{ 'currency': ?0, 'status': 'COMPLETED', 'createdAt': { $gte: ?1, $lte: ?2 } }")
-    List<Payment> findCompletedPaymentsByCurrencyInDateRange(String currency, LocalDateTime startDate, LocalDateTime endDate);
-
-    // Custom business logic queries
-    @Query("{ 'isSplitPayment': true, 'groupOrderId': ?0, 'status': { $ne: 'COMPLETED' } }")
-    List<Payment> findIncompleteSplitPaymentsByGroupOrder(String groupOrderId);
-    
-    @Query("{ 'paymentType': 'ORDER_PAYMENT', 'status': 'COMPLETED', 'amount': { $gte: ?0 } }")
-    List<Payment> findLargeCompletedOrderPayments(Double minAmount);
-
-    // Audit and monitoring queries
-    @Query("{ 'retryCount': { $gte: ?0 } }")
-    List<Payment> findPaymentsWithHighRetryCount(int minRetryCount);
-    
-    @Query("{ 'failureReason': { $exists: true, $ne: null }, 'status': 'FAILED' }")
-    List<Payment> findFailedPaymentsWithReason();
+    // Find duplicate payments (same order, amount, and recent timeframe)
+    @Query("{'orderId': ?0, 'amount': ?1, 'createdAt': {'$gte': ?2}}")
+    List<Payment> findPotentialDuplicatePayments(String orderId, Double amount, LocalDateTime recentTimeThreshold);
 }
