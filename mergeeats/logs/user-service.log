@@ -7376,3 +7376,288 @@ Caused by: com.mongodb.MongoCommandException: Command failed with error 18 (Auth
 2025-07-25 15:11:59 - [Producer clientId=producer-1] Node -1 disconnected.
 2025-07-25 15:11:59 - [Producer clientId=producer-1] Connection to node -1 (localhost/127.0.0.1:9092) could not be established. Broker may not be available.
 2025-07-25 15:11:59 - [Producer clientId=producer-1] Bootstrap broker localhost:9092 (id: -1 rack: null) disconnected
+2025-07-25 15:12:00 - [Producer clientId=producer-1] Node -1 disconnected.
+2025-07-25 15:12:00 - [Producer clientId=producer-1] Connection to node -1 (localhost/127.0.0.1:9092) could not be established. Broker may not be available.
+2025-07-25 15:12:00 - [Producer clientId=producer-1] Bootstrap broker localhost:9092 (id: -1 rack: null) disconnected
+2025-07-25 15:12:01 - [Producer clientId=producer-1] Node -1 disconnected.
+2025-07-25 15:12:01 - [Producer clientId=producer-1] Connection to node -1 (localhost/127.0.0.1:9092) could not be established. Broker may not be available.
+2025-07-25 15:12:01 - [Producer clientId=producer-1] Bootstrap broker localhost:9092 (id: -1 rack: null) disconnected
+2025-07-25 15:12:02 - [Producer clientId=producer-1] Node -1 disconnected.
+2025-07-25 15:12:02 - [Producer clientId=producer-1] Connection to node -1 (localhost/127.0.0.1:9092) could not be established. Broker may not be available.
+2025-07-25 15:12:02 - [Producer clientId=producer-1] Bootstrap broker localhost:9092 (id: -1 rack: null) disconnected
+2025-07-25 15:12:03 - [Producer clientId=producer-1] Node -1 disconnected.
+2025-07-25 15:12:03 - [Producer clientId=producer-1] Connection to node -1 (localhost/127.0.0.1:9092) could not be established. Broker may not be available.
+2025-07-25 15:12:03 - [Producer clientId=producer-1] Bootstrap broker localhost:9092 (id: -1 rack: null) disconnected
+2025-07-25 15:12:04 - [Producer clientId=producer-1] Node -1 disconnected.
+2025-07-25 15:12:04 - [Producer clientId=producer-1] Connection to node -1 (localhost/127.0.0.1:9092) could not be established. Broker may not be available.
+2025-07-25 15:12:04 - [Producer clientId=producer-1] Bootstrap broker localhost:9092 (id: -1 rack: null) disconnected
+2025-07-25 15:12:05 - [Producer clientId=producer-1] Node -1 disconnected.
+2025-07-25 15:12:05 - [Producer clientId=producer-1] Connection to node -1 (localhost/127.0.0.1:9092) could not be established. Broker may not be available.
+2025-07-25 15:12:05 - [Producer clientId=producer-1] Bootstrap broker localhost:9092 (id: -1 rack: null) disconnected
+2025-07-25 15:12:06 - [Producer clientId=producer-1] Node -1 disconnected.
+2025-07-25 15:12:06 - [Producer clientId=producer-1] Connection to node -1 (localhost/127.0.0.1:9092) could not be established. Broker may not be available.
+2025-07-25 15:12:06 - [Producer clientId=producer-1] Bootstrap broker localhost:9092 (id: -1 rack: null) disconnected
+2025-07-25 15:12:07 - [Producer clientId=producer-1] Node -1 disconnected.
+2025-07-25 15:12:07 - [Producer clientId=producer-1] Connection to node -1 (localhost/127.0.0.1:9092) could not be established. Broker may not be available.
+2025-07-25 15:12:07 - [Producer clientId=producer-1] Bootstrap broker localhost:9092 (id: -1 rack: null) disconnected
+2025-07-25 15:12:07 - Exception in monitor thread while connecting to server localhost:27017
+com.mongodb.MongoNodeIsRecoveringException: Command failed with error 11600 (InterruptedAtShutdown): 'interrupted at shutdown' on server localhost:27017. The full response is {"ok": 0.0, "errmsg": "interrupted at shutdown", "code": 11600, "codeName": "InterruptedAtShutdown"}
+	at com.mongodb.internal.connection.ProtocolHelper.createSpecialException(ProtocolHelper.java:251)
+	at com.mongodb.internal.connection.ProtocolHelper.getCommandFailureException(ProtocolHelper.java:201)
+	at com.mongodb.internal.connection.InternalStreamConnection.receiveCommandMessageResponse(InternalStreamConnection.java:454)
+	at com.mongodb.internal.connection.InternalStreamConnection.receive(InternalStreamConnection.java:404)
+	at com.mongodb.internal.connection.DefaultServerMonitor$ServerMonitorRunnable.lookupServerDescription(DefaultServerMonitor.java:224)
+	at com.mongodb.internal.connection.DefaultServerMonitor$ServerMonitorRunnable.run(DefaultServerMonitor.java:156)
+	at java.base/java.lang.Thread.run(Thread.java:1583)
+2025-07-25 15:12:08 - [Producer clientId=producer-1] Node -1 disconnected.
+2025-07-25 15:12:08 - [Producer clientId=producer-1] Connection to node -1 (localhost/127.0.0.1:9092) could not be established. Broker may not be available.
+2025-07-25 15:12:08 - [Producer clientId=producer-1] Bootstrap broker localhost:9092 (id: -1 rack: null) disconnected
+2025-07-25 15:12:09 - [Producer clientId=producer-1] Node -1 disconnected.
+2025-07-25 15:12:09 - [Producer clientId=producer-1] Connection to node -1 (localhost/127.0.0.1:9092) could not be established. Broker may not be available.
+2025-07-25 15:12:09 - [Producer clientId=producer-1] Bootstrap broker localhost:9092 (id: -1 rack: null) disconnected
+2025-07-25 15:12:10 - [Producer clientId=producer-1] Node -1 disconnected.
+2025-07-25 15:12:10 - [Producer clientId=producer-1] Connection to node -1 (localhost/127.0.0.1:9092) could not be established. Broker may not be available.
+2025-07-25 15:12:10 - [Producer clientId=producer-1] Bootstrap broker localhost:9092 (id: -1 rack: null) disconnected
+2025-07-25 15:12:11 - [Producer clientId=producer-1] Node -1 disconnected.
+2025-07-25 15:12:11 - [Producer clientId=producer-1] Connection to node -1 (localhost/127.0.0.1:9092) could not be established. Broker may not be available.
+2025-07-25 15:12:11 - [Producer clientId=producer-1] Bootstrap broker localhost:9092 (id: -1 rack: null) disconnected
+2025-07-25 15:12:12 - [Producer clientId=producer-1] Node -1 disconnected.
+2025-07-25 15:12:12 - [Producer clientId=producer-1] Connection to node -1 (localhost/127.0.0.1:9092) could not be established. Broker may not be available.
+2025-07-25 15:12:12 - [Producer clientId=producer-1] Bootstrap broker localhost:9092 (id: -1 rack: null) disconnected
+2025-07-25 15:12:13 - [Producer clientId=producer-1] Node -1 disconnected.
+2025-07-25 15:12:13 - [Producer clientId=producer-1] Connection to node -1 (localhost/127.0.0.1:9092) could not be established. Broker may not be available.
+2025-07-25 15:12:13 - [Producer clientId=producer-1] Bootstrap broker localhost:9092 (id: -1 rack: null) disconnected
+2025-07-25 15:12:14 - [Producer clientId=producer-1] Node -1 disconnected.
+2025-07-25 15:12:14 - [Producer clientId=producer-1] Connection to node -1 (localhost/127.0.0.1:9092) could not be established. Broker may not be available.
+2025-07-25 15:12:14 - [Producer clientId=producer-1] Bootstrap broker localhost:9092 (id: -1 rack: null) disconnected
+2025-07-25 15:12:15 - [Producer clientId=producer-1] Node -1 disconnected.
+2025-07-25 15:12:15 - [Producer clientId=producer-1] Connection to node -1 (localhost/127.0.0.1:9092) could not be established. Broker may not be available.
+2025-07-25 15:12:15 - [Producer clientId=producer-1] Bootstrap broker localhost:9092 (id: -1 rack: null) disconnected
+2025-07-25 15:12:16 - [Producer clientId=producer-1] Node -1 disconnected.
+2025-07-25 15:12:16 - [Producer clientId=producer-1] Connection to node -1 (localhost/127.0.0.1:9092) could not be established. Broker may not be available.
+2025-07-25 15:12:16 - [Producer clientId=producer-1] Bootstrap broker localhost:9092 (id: -1 rack: null) disconnected
+2025-07-25 15:12:17 - [Producer clientId=producer-1] Node -1 disconnected.
+2025-07-25 15:12:17 - [Producer clientId=producer-1] Connection to node -1 (localhost/127.0.0.1:9092) could not be established. Broker may not be available.
+2025-07-25 15:12:17 - [Producer clientId=producer-1] Bootstrap broker localhost:9092 (id: -1 rack: null) disconnected
+2025-07-25 15:12:17 - Exception in monitor thread while connecting to server localhost:27017
+com.mongodb.MongoSocketOpenException: Exception opening socket
+	at com.mongodb.internal.connection.SocketStream.lambda$open$0(SocketStream.java:84)
+	at java.base/java.util.Optional.orElseThrow(Optional.java:403)
+	at com.mongodb.internal.connection.SocketStream.open(SocketStream.java:84)
+	at com.mongodb.internal.connection.InternalStreamConnection.open(InternalStreamConnection.java:211)
+	at com.mongodb.internal.connection.DefaultServerMonitor$ServerMonitorRunnable.lookupServerDescription(DefaultServerMonitor.java:196)
+	at com.mongodb.internal.connection.DefaultServerMonitor$ServerMonitorRunnable.run(DefaultServerMonitor.java:156)
+	at java.base/java.lang.Thread.run(Thread.java:1583)
+Caused by: java.net.ConnectException: Connection refused
+	at java.base/sun.nio.ch.Net.pollConnect(Native Method)
+	at java.base/sun.nio.ch.Net.pollConnectNow(Net.java:682)
+	at java.base/sun.nio.ch.NioSocketImpl.timedFinishConnect(NioSocketImpl.java:542)
+	at java.base/sun.nio.ch.NioSocketImpl.connect(NioSocketImpl.java:592)
+	at java.base/java.net.SocksSocketImpl.connect(SocksSocketImpl.java:327)
+	at java.base/java.net.Socket.connect(Socket.java:751)
+	at com.mongodb.internal.connection.SocketStreamHelper.initialize(SocketStreamHelper.java:76)
+	at com.mongodb.internal.connection.SocketStream.initializeSocket(SocketStream.java:104)
+	at com.mongodb.internal.connection.SocketStream.open(SocketStream.java:78)
+	... 4 common frames omitted
+2025-07-25 15:12:18 - [Producer clientId=producer-1] Node -1 disconnected.
+2025-07-25 15:12:18 - [Producer clientId=producer-1] Connection to node -1 (localhost/127.0.0.1:9092) could not be established. Broker may not be available.
+2025-07-25 15:12:18 - [Producer clientId=producer-1] Bootstrap broker localhost:9092 (id: -1 rack: null) disconnected
+2025-07-25 15:12:19 - [Producer clientId=producer-1] Node -1 disconnected.
+2025-07-25 15:12:19 - [Producer clientId=producer-1] Connection to node -1 (localhost/127.0.0.1:9092) could not be established. Broker may not be available.
+2025-07-25 15:12:19 - [Producer clientId=producer-1] Bootstrap broker localhost:9092 (id: -1 rack: null) disconnected
+2025-07-25 15:12:21 - [Producer clientId=producer-1] Node -1 disconnected.
+2025-07-25 15:12:21 - [Producer clientId=producer-1] Connection to node -1 (localhost/127.0.0.1:9092) could not be established. Broker may not be available.
+2025-07-25 15:12:21 - [Producer clientId=producer-1] Bootstrap broker localhost:9092 (id: -1 rack: null) disconnected
+2025-07-25 15:12:21 - [Producer clientId=producer-1] Node -1 disconnected.
+2025-07-25 15:12:21 - [Producer clientId=producer-1] Connection to node -1 (localhost/127.0.0.1:9092) could not be established. Broker may not be available.
+2025-07-25 15:12:21 - [Producer clientId=producer-1] Bootstrap broker localhost:9092 (id: -1 rack: null) disconnected
+2025-07-25 15:12:22 - [Producer clientId=producer-1] Node -1 disconnected.
+2025-07-25 15:12:22 - [Producer clientId=producer-1] Connection to node -1 (localhost/127.0.0.1:9092) could not be established. Broker may not be available.
+2025-07-25 15:12:22 - [Producer clientId=producer-1] Bootstrap broker localhost:9092 (id: -1 rack: null) disconnected
+2025-07-25 15:12:24 - [Producer clientId=producer-1] Node -1 disconnected.
+2025-07-25 15:12:24 - [Producer clientId=producer-1] Connection to node -1 (localhost/127.0.0.1:9092) could not be established. Broker may not be available.
+2025-07-25 15:12:24 - [Producer clientId=producer-1] Bootstrap broker localhost:9092 (id: -1 rack: null) disconnected
+2025-07-25 15:12:25 - [Producer clientId=producer-1] Node -1 disconnected.
+2025-07-25 15:12:25 - [Producer clientId=producer-1] Connection to node -1 (localhost/127.0.0.1:9092) could not be established. Broker may not be available.
+2025-07-25 15:12:25 - [Producer clientId=producer-1] Bootstrap broker localhost:9092 (id: -1 rack: null) disconnected
+2025-07-25 15:12:26 - [Producer clientId=producer-1] Node -1 disconnected.
+2025-07-25 15:12:26 - [Producer clientId=producer-1] Connection to node -1 (localhost/127.0.0.1:9092) could not be established. Broker may not be available.
+2025-07-25 15:12:26 - [Producer clientId=producer-1] Bootstrap broker localhost:9092 (id: -1 rack: null) disconnected
+2025-07-25 15:12:27 - [Producer clientId=producer-1] Node -1 disconnected.
+2025-07-25 15:12:27 - [Producer clientId=producer-1] Connection to node -1 (localhost/127.0.0.1:9092) could not be established. Broker may not be available.
+2025-07-25 15:12:27 - [Producer clientId=producer-1] Bootstrap broker localhost:9092 (id: -1 rack: null) disconnected
+2025-07-25 15:12:28 - [Producer clientId=producer-1] Node -1 disconnected.
+2025-07-25 15:12:28 - [Producer clientId=producer-1] Connection to node -1 (localhost/127.0.0.1:9092) could not be established. Broker may not be available.
+2025-07-25 15:12:28 - [Producer clientId=producer-1] Bootstrap broker localhost:9092 (id: -1 rack: null) disconnected
+2025-07-25 15:12:29 - [Producer clientId=producer-1] Node -1 disconnected.
+2025-07-25 15:12:29 - [Producer clientId=producer-1] Connection to node -1 (localhost/127.0.0.1:9092) could not be established. Broker may not be available.
+2025-07-25 15:12:29 - [Producer clientId=producer-1] Bootstrap broker localhost:9092 (id: -1 rack: null) disconnected
+2025-07-25 15:12:30 - [Producer clientId=producer-1] Node -1 disconnected.
+2025-07-25 15:12:30 - [Producer clientId=producer-1] Connection to node -1 (localhost/127.0.0.1:9092) could not be established. Broker may not be available.
+2025-07-25 15:12:30 - [Producer clientId=producer-1] Bootstrap broker localhost:9092 (id: -1 rack: null) disconnected
+2025-07-25 15:12:31 - [Producer clientId=producer-1] Node -1 disconnected.
+2025-07-25 15:12:31 - [Producer clientId=producer-1] Connection to node -1 (localhost/127.0.0.1:9092) could not be established. Broker may not be available.
+2025-07-25 15:12:31 - [Producer clientId=producer-1] Bootstrap broker localhost:9092 (id: -1 rack: null) disconnected
+2025-07-25 15:12:32 - [Producer clientId=producer-1] Node -1 disconnected.
+2025-07-25 15:12:32 - [Producer clientId=producer-1] Connection to node -1 (localhost/127.0.0.1:9092) could not be established. Broker may not be available.
+2025-07-25 15:12:32 - [Producer clientId=producer-1] Bootstrap broker localhost:9092 (id: -1 rack: null) disconnected
+2025-07-25 15:12:33 - [Producer clientId=producer-1] Node -1 disconnected.
+2025-07-25 15:12:33 - [Producer clientId=producer-1] Connection to node -1 (localhost/127.0.0.1:9092) could not be established. Broker may not be available.
+2025-07-25 15:12:33 - [Producer clientId=producer-1] Bootstrap broker localhost:9092 (id: -1 rack: null) disconnected
+2025-07-25 15:12:34 - [Producer clientId=producer-1] Node -1 disconnected.
+2025-07-25 15:12:34 - [Producer clientId=producer-1] Connection to node -1 (localhost/127.0.0.1:9092) could not be established. Broker may not be available.
+2025-07-25 15:12:34 - [Producer clientId=producer-1] Bootstrap broker localhost:9092 (id: -1 rack: null) disconnected
+2025-07-25 15:12:35 - [Producer clientId=producer-1] Node -1 disconnected.
+2025-07-25 15:12:35 - [Producer clientId=producer-1] Connection to node -1 (localhost/127.0.0.1:9092) could not be established. Broker may not be available.
+2025-07-25 15:12:35 - [Producer clientId=producer-1] Bootstrap broker localhost:9092 (id: -1 rack: null) disconnected
+2025-07-25 15:12:36 - [Producer clientId=producer-1] Node -1 disconnected.
+2025-07-25 15:12:36 - [Producer clientId=producer-1] Connection to node -1 (localhost/127.0.0.1:9092) could not be established. Broker may not be available.
+2025-07-25 15:12:36 - [Producer clientId=producer-1] Bootstrap broker localhost:9092 (id: -1 rack: null) disconnected
+2025-07-25 15:12:37 - [Producer clientId=producer-1] Node -1 disconnected.
+2025-07-25 15:12:37 - [Producer clientId=producer-1] Connection to node -1 (localhost/127.0.0.1:9092) could not be established. Broker may not be available.
+2025-07-25 15:12:37 - [Producer clientId=producer-1] Bootstrap broker localhost:9092 (id: -1 rack: null) disconnected
+2025-07-25 15:12:38 - [Producer clientId=producer-1] Node -1 disconnected.
+2025-07-25 15:12:38 - [Producer clientId=producer-1] Connection to node -1 (localhost/127.0.0.1:9092) could not be established. Broker may not be available.
+2025-07-25 15:12:38 - [Producer clientId=producer-1] Bootstrap broker localhost:9092 (id: -1 rack: null) disconnected
+2025-07-25 15:12:39 - [Producer clientId=producer-1] Node -1 disconnected.
+2025-07-25 15:12:39 - [Producer clientId=producer-1] Connection to node -1 (localhost/127.0.0.1:9092) could not be established. Broker may not be available.
+2025-07-25 15:12:39 - [Producer clientId=producer-1] Bootstrap broker localhost:9092 (id: -1 rack: null) disconnected
+2025-07-25 15:12:41 - [Producer clientId=producer-1] Node -1 disconnected.
+2025-07-25 15:12:41 - [Producer clientId=producer-1] Connection to node -1 (localhost/127.0.0.1:9092) could not be established. Broker may not be available.
+2025-07-25 15:12:41 - [Producer clientId=producer-1] Bootstrap broker localhost:9092 (id: -1 rack: null) disconnected
+2025-07-25 15:12:42 - [Producer clientId=producer-1] Node -1 disconnected.
+2025-07-25 15:12:42 - [Producer clientId=producer-1] Connection to node -1 (localhost/127.0.0.1:9092) could not be established. Broker may not be available.
+2025-07-25 15:12:42 - [Producer clientId=producer-1] Bootstrap broker localhost:9092 (id: -1 rack: null) disconnected
+2025-07-25 15:12:43 - [Producer clientId=producer-1] Node -1 disconnected.
+2025-07-25 15:12:43 - [Producer clientId=producer-1] Connection to node -1 (localhost/127.0.0.1:9092) could not be established. Broker may not be available.
+2025-07-25 15:12:43 - [Producer clientId=producer-1] Bootstrap broker localhost:9092 (id: -1 rack: null) disconnected
+2025-07-25 15:12:44 - [Producer clientId=producer-1] Node -1 disconnected.
+2025-07-25 15:12:44 - [Producer clientId=producer-1] Connection to node -1 (localhost/127.0.0.1:9092) could not be established. Broker may not be available.
+2025-07-25 15:12:44 - [Producer clientId=producer-1] Bootstrap broker localhost:9092 (id: -1 rack: null) disconnected
+2025-07-25 15:12:45 - [Producer clientId=producer-1] Node -1 disconnected.
+2025-07-25 15:12:45 - [Producer clientId=producer-1] Connection to node -1 (localhost/127.0.0.1:9092) could not be established. Broker may not be available.
+2025-07-25 15:12:45 - [Producer clientId=producer-1] Bootstrap broker localhost:9092 (id: -1 rack: null) disconnected
+2025-07-25 15:12:46 - [Producer clientId=producer-1] Node -1 disconnected.
+2025-07-25 15:12:46 - [Producer clientId=producer-1] Connection to node -1 (localhost/127.0.0.1:9092) could not be established. Broker may not be available.
+2025-07-25 15:12:46 - [Producer clientId=producer-1] Bootstrap broker localhost:9092 (id: -1 rack: null) disconnected
+2025-07-25 15:12:47 - [Producer clientId=producer-1] Node -1 disconnected.
+2025-07-25 15:12:47 - [Producer clientId=producer-1] Connection to node -1 (localhost/127.0.0.1:9092) could not be established. Broker may not be available.
+2025-07-25 15:12:47 - [Producer clientId=producer-1] Bootstrap broker localhost:9092 (id: -1 rack: null) disconnected
+2025-07-25 15:12:47 - Monitor thread successfully connected to server with description ServerDescription{address=localhost:27017, type=STANDALONE, state=CONNECTED, ok=true, minWireVersion=0, maxWireVersion=25, maxDocumentSize=16777216, logicalSessionTimeoutMinutes=30, roundTripTimeNanos=828930}
+2025-07-25 15:12:48 - [Producer clientId=producer-1] Node -1 disconnected.
+2025-07-25 15:12:48 - [Producer clientId=producer-1] Connection to node -1 (localhost/127.0.0.1:9092) could not be established. Broker may not be available.
+2025-07-25 15:12:48 - [Producer clientId=producer-1] Bootstrap broker localhost:9092 (id: -1 rack: null) disconnected
+2025-07-25 15:12:49 - [Producer clientId=producer-1] Node -1 disconnected.
+2025-07-25 15:12:49 - [Producer clientId=producer-1] Connection to node -1 (localhost/127.0.0.1:9092) could not be established. Broker may not be available.
+2025-07-25 15:12:49 - [Producer clientId=producer-1] Bootstrap broker localhost:9092 (id: -1 rack: null) disconnected
+2025-07-25 15:12:50 - [Producer clientId=producer-1] Node -1 disconnected.
+2025-07-25 15:12:50 - [Producer clientId=producer-1] Connection to node -1 (localhost/127.0.0.1:9092) could not be established. Broker may not be available.
+2025-07-25 15:12:50 - [Producer clientId=producer-1] Bootstrap broker localhost:9092 (id: -1 rack: null) disconnected
+2025-07-25 15:12:51 - [Producer clientId=producer-1] Node -1 disconnected.
+2025-07-25 15:12:51 - [Producer clientId=producer-1] Connection to node -1 (localhost/127.0.0.1:9092) could not be established. Broker may not be available.
+2025-07-25 15:12:51 - [Producer clientId=producer-1] Bootstrap broker localhost:9092 (id: -1 rack: null) disconnected
+2025-07-25 15:12:52 - [Producer clientId=producer-1] Node -1 disconnected.
+2025-07-25 15:12:52 - [Producer clientId=producer-1] Connection to node -1 (localhost/127.0.0.1:9092) could not be established. Broker may not be available.
+2025-07-25 15:12:52 - [Producer clientId=producer-1] Bootstrap broker localhost:9092 (id: -1 rack: null) disconnected
+2025-07-25 15:12:53 - [Producer clientId=producer-1] Node -1 disconnected.
+2025-07-25 15:12:53 - [Producer clientId=producer-1] Connection to node -1 (localhost/127.0.0.1:9092) could not be established. Broker may not be available.
+2025-07-25 15:12:53 - [Producer clientId=producer-1] Bootstrap broker localhost:9092 (id: -1 rack: null) disconnected
+2025-07-25 15:12:54 - [Producer clientId=producer-1] Node -1 disconnected.
+2025-07-25 15:12:54 - [Producer clientId=producer-1] Connection to node -1 (localhost/127.0.0.1:9092) could not be established. Broker may not be available.
+2025-07-25 15:12:54 - [Producer clientId=producer-1] Bootstrap broker localhost:9092 (id: -1 rack: null) disconnected
+2025-07-25 15:12:56 - [Producer clientId=producer-1] Node -1 disconnected.
+2025-07-25 15:12:56 - [Producer clientId=producer-1] Connection to node -1 (localhost/127.0.0.1:9092) could not be established. Broker may not be available.
+2025-07-25 15:12:56 - [Producer clientId=producer-1] Bootstrap broker localhost:9092 (id: -1 rack: null) disconnected
+2025-07-25 15:12:57 - [Producer clientId=producer-1] Node -1 disconnected.
+2025-07-25 15:12:57 - [Producer clientId=producer-1] Connection to node -1 (localhost/127.0.0.1:9092) could not be established. Broker may not be available.
+2025-07-25 15:12:57 - [Producer clientId=producer-1] Bootstrap broker localhost:9092 (id: -1 rack: null) disconnected
+2025-07-25 15:12:58 - [Producer clientId=producer-1] Node -1 disconnected.
+2025-07-25 15:12:58 - [Producer clientId=producer-1] Connection to node -1 (localhost/127.0.0.1:9092) could not be established. Broker may not be available.
+2025-07-25 15:12:58 - [Producer clientId=producer-1] Bootstrap broker localhost:9092 (id: -1 rack: null) disconnected
+2025-07-25 15:12:59 - [Producer clientId=producer-1] Node -1 disconnected.
+2025-07-25 15:12:59 - [Producer clientId=producer-1] Connection to node -1 (localhost/127.0.0.1:9092) could not be established. Broker may not be available.
+2025-07-25 15:12:59 - [Producer clientId=producer-1] Bootstrap broker localhost:9092 (id: -1 rack: null) disconnected
+2025-07-25 15:13:00 - [Producer clientId=producer-1] Node -1 disconnected.
+2025-07-25 15:13:00 - [Producer clientId=producer-1] Connection to node -1 (localhost/127.0.0.1:9092) could not be established. Broker may not be available.
+2025-07-25 15:13:00 - [Producer clientId=producer-1] Bootstrap broker localhost:9092 (id: -1 rack: null) disconnected
+2025-07-25 15:13:01 - [Producer clientId=producer-1] Node -1 disconnected.
+2025-07-25 15:13:01 - [Producer clientId=producer-1] Connection to node -1 (localhost/127.0.0.1:9092) could not be established. Broker may not be available.
+2025-07-25 15:13:01 - [Producer clientId=producer-1] Bootstrap broker localhost:9092 (id: -1 rack: null) disconnected
+2025-07-25 15:13:02 - [Producer clientId=producer-1] Node -1 disconnected.
+2025-07-25 15:13:02 - [Producer clientId=producer-1] Connection to node -1 (localhost/127.0.0.1:9092) could not be established. Broker may not be available.
+2025-07-25 15:13:02 - [Producer clientId=producer-1] Bootstrap broker localhost:9092 (id: -1 rack: null) disconnected
+2025-07-25 15:13:03 - [Producer clientId=producer-1] Node -1 disconnected.
+2025-07-25 15:13:03 - [Producer clientId=producer-1] Connection to node -1 (localhost/127.0.0.1:9092) could not be established. Broker may not be available.
+2025-07-25 15:13:03 - [Producer clientId=producer-1] Bootstrap broker localhost:9092 (id: -1 rack: null) disconnected
+2025-07-25 15:13:04 - [Producer clientId=producer-1] Node -1 disconnected.
+2025-07-25 15:13:04 - [Producer clientId=producer-1] Connection to node -1 (localhost/127.0.0.1:9092) could not be established. Broker may not be available.
+2025-07-25 15:13:04 - [Producer clientId=producer-1] Bootstrap broker localhost:9092 (id: -1 rack: null) disconnected
+2025-07-25 15:13:05 - [Producer clientId=producer-1] Node -1 disconnected.
+2025-07-25 15:13:05 - [Producer clientId=producer-1] Connection to node -1 (localhost/127.0.0.1:9092) could not be established. Broker may not be available.
+2025-07-25 15:13:05 - [Producer clientId=producer-1] Bootstrap broker localhost:9092 (id: -1 rack: null) disconnected
+2025-07-25 15:13:06 - [Producer clientId=producer-1] Node -1 disconnected.
+2025-07-25 15:13:06 - [Producer clientId=producer-1] Connection to node -1 (localhost/127.0.0.1:9092) could not be established. Broker may not be available.
+2025-07-25 15:13:06 - [Producer clientId=producer-1] Bootstrap broker localhost:9092 (id: -1 rack: null) disconnected
+2025-07-25 15:13:07 - [Producer clientId=producer-1] Node -1 disconnected.
+2025-07-25 15:13:07 - [Producer clientId=producer-1] Connection to node -1 (localhost/127.0.0.1:9092) could not be established. Broker may not be available.
+2025-07-25 15:13:07 - [Producer clientId=producer-1] Bootstrap broker localhost:9092 (id: -1 rack: null) disconnected
+2025-07-25 15:13:08 - [Producer clientId=producer-1] Node -1 disconnected.
+2025-07-25 15:13:08 - [Producer clientId=producer-1] Connection to node -1 (localhost/127.0.0.1:9092) could not be established. Broker may not be available.
+2025-07-25 15:13:08 - [Producer clientId=producer-1] Bootstrap broker localhost:9092 (id: -1 rack: null) disconnected
+2025-07-25 15:13:09 - [Producer clientId=producer-1] Node -1 disconnected.
+2025-07-25 15:13:09 - [Producer clientId=producer-1] Connection to node -1 (localhost/127.0.0.1:9092) could not be established. Broker may not be available.
+2025-07-25 15:13:09 - [Producer clientId=producer-1] Bootstrap broker localhost:9092 (id: -1 rack: null) disconnected
+2025-07-25 15:13:10 - [Producer clientId=producer-1] Node -1 disconnected.
+2025-07-25 15:13:10 - [Producer clientId=producer-1] Connection to node -1 (localhost/127.0.0.1:9092) could not be established. Broker may not be available.
+2025-07-25 15:13:10 - [Producer clientId=producer-1] Bootstrap broker localhost:9092 (id: -1 rack: null) disconnected
+2025-07-25 15:13:11 - [Producer clientId=producer-1] Node -1 disconnected.
+2025-07-25 15:13:11 - [Producer clientId=producer-1] Connection to node -1 (localhost/127.0.0.1:9092) could not be established. Broker may not be available.
+2025-07-25 15:13:11 - [Producer clientId=producer-1] Bootstrap broker localhost:9092 (id: -1 rack: null) disconnected
+2025-07-25 15:13:12 - [Producer clientId=producer-1] Node -1 disconnected.
+2025-07-25 15:13:12 - [Producer clientId=producer-1] Connection to node -1 (localhost/127.0.0.1:9092) could not be established. Broker may not be available.
+2025-07-25 15:13:12 - [Producer clientId=producer-1] Bootstrap broker localhost:9092 (id: -1 rack: null) disconnected
+2025-07-25 15:13:13 - [Producer clientId=producer-1] Node -1 disconnected.
+2025-07-25 15:13:13 - [Producer clientId=producer-1] Connection to node -1 (localhost/127.0.0.1:9092) could not be established. Broker may not be available.
+2025-07-25 15:13:13 - [Producer clientId=producer-1] Bootstrap broker localhost:9092 (id: -1 rack: null) disconnected
+2025-07-25 15:13:14 - [Producer clientId=producer-1] Node -1 disconnected.
+2025-07-25 15:13:14 - [Producer clientId=producer-1] Connection to node -1 (localhost/127.0.0.1:9092) could not be established. Broker may not be available.
+2025-07-25 15:13:14 - [Producer clientId=producer-1] Bootstrap broker localhost:9092 (id: -1 rack: null) disconnected
+2025-07-25 15:13:16 - [Producer clientId=producer-1] Node -1 disconnected.
+2025-07-25 15:13:16 - [Producer clientId=producer-1] Connection to node -1 (localhost/127.0.0.1:9092) could not be established. Broker may not be available.
+2025-07-25 15:13:16 - [Producer clientId=producer-1] Bootstrap broker localhost:9092 (id: -1 rack: null) disconnected
+2025-07-25 15:13:17 - [Producer clientId=producer-1] Node -1 disconnected.
+2025-07-25 15:13:17 - [Producer clientId=producer-1] Connection to node -1 (localhost/127.0.0.1:9092) could not be established. Broker may not be available.
+2025-07-25 15:13:17 - [Producer clientId=producer-1] Bootstrap broker localhost:9092 (id: -1 rack: null) disconnected
+2025-07-25 15:13:18 - [Producer clientId=producer-1] Node -1 disconnected.
+2025-07-25 15:13:18 - [Producer clientId=producer-1] Connection to node -1 (localhost/127.0.0.1:9092) could not be established. Broker may not be available.
+2025-07-25 15:13:18 - [Producer clientId=producer-1] Bootstrap broker localhost:9092 (id: -1 rack: null) disconnected
+2025-07-25 15:13:19 - [Producer clientId=producer-1] Node -1 disconnected.
+2025-07-25 15:13:19 - [Producer clientId=producer-1] Connection to node -1 (localhost/127.0.0.1:9092) could not be established. Broker may not be available.
+2025-07-25 15:13:19 - [Producer clientId=producer-1] Bootstrap broker localhost:9092 (id: -1 rack: null) disconnected
+2025-07-25 15:13:20 - [Producer clientId=producer-1] Node -1 disconnected.
+2025-07-25 15:13:20 - [Producer clientId=producer-1] Connection to node -1 (localhost/127.0.0.1:9092) could not be established. Broker may not be available.
+2025-07-25 15:13:20 - [Producer clientId=producer-1] Bootstrap broker localhost:9092 (id: -1 rack: null) disconnected
+2025-07-25 15:13:21 - [Producer clientId=producer-1] Node -1 disconnected.
+2025-07-25 15:13:21 - [Producer clientId=producer-1] Connection to node -1 (localhost/127.0.0.1:9092) could not be established. Broker may not be available.
+2025-07-25 15:13:21 - [Producer clientId=producer-1] Bootstrap broker localhost:9092 (id: -1 rack: null) disconnected
+2025-07-25 15:13:22 - [Producer clientId=producer-1] Node -1 disconnected.
+2025-07-25 15:13:22 - [Producer clientId=producer-1] Connection to node -1 (localhost/127.0.0.1:9092) could not be established. Broker may not be available.
+2025-07-25 15:13:22 - [Producer clientId=producer-1] Bootstrap broker localhost:9092 (id: -1 rack: null) disconnected
+2025-07-25 15:13:23 - [Producer clientId=producer-1] Closing the Kafka producer with timeoutMillis = 30000 ms.
+2025-07-25 15:13:23 - Metrics scheduler closed
+2025-07-25 15:13:23 - Closing reporter org.apache.kafka.common.metrics.JmxReporter
+2025-07-25 15:13:23 - Metrics reporters closed
+2025-07-25 15:13:23 - App info kafka.producer for producer-1 unregistered
+[[1;34mINFO[m] [1m------------------------------------------------------------------------[m
+[[1;34mINFO[m] [1;31mBUILD FAILURE[m
+[[1;34mINFO[m] [1m------------------------------------------------------------------------[m
+[[1;34mINFO[m] Total time:  57:54 min
+[[1;34mINFO[m] Finished at: 2025-07-25T15:13:23Z
+[[1;34mINFO[m] [1m------------------------------------------------------------------------[m
+[[1;31mERROR[m] Failed to execute goal [32morg.springframework.boot:spring-boot-maven-plugin:3.2.0:run[m [1m(default-cli)[m on project [36muser-service[m: [1;31mProcess terminated with exit code: 143[m -> [1m[Help 1][m
+[[1;31mERROR[m] 
+[[1;31mERROR[m] To see the full stack trace of the errors, re-run Maven with the [1m-e[m switch.
+[[1;31mERROR[m] Re-run Maven using the [1m-X[m switch to enable full debug logging.
+[[1;31mERROR[m] 
+[[1;31mERROR[m] For more information about the errors and possible solutions, please read the following articles:
+[[1;31mERROR[m] [1m[Help 1][m http://cwiki.apache.org/confluence/display/MAVEN/MojoExecutionException
