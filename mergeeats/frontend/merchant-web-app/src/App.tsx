@@ -36,6 +36,7 @@ import {
   AttachMoney,
 } from '@mui/icons-material';
 import { LineChart, Line, XAxis, YAxis, CartesianGrid, Tooltip, ResponsiveContainer, BarChart, Bar, PieChart, Pie, Cell } from 'recharts';
+import OrderManagement from './components/OrderManagement';
 import './App.css';
 
 const drawerWidth = 240;
@@ -405,7 +406,8 @@ function App() {
         >
           <Toolbar />
           {selectedMenu === 'Dashboard' && <DashboardContent />}
-          {selectedMenu !== 'Dashboard' && (
+          {selectedMenu === 'Orders' && <OrderManagement />}
+          {selectedMenu !== 'Dashboard' && selectedMenu !== 'Orders' && (
             <Typography variant="h4">
               {selectedMenu} - Coming Soon!
             </Typography>
