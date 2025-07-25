@@ -1,7 +1,7 @@
 package com.mergeeats.paymentservice.controller;
 
 import com.mergeeats.common.models.Payment;
-import com.mergeeats.common.models.Payment.PaymentMethod;
+import com.mergeeats.common.enums.PaymentMethod;
 import com.mergeeats.common.enums.PaymentStatus;
 import com.mergeeats.paymentservice.service.PaymentService;
 import com.mergeeats.paymentservice.dto.CreatePaymentRequest;
@@ -46,12 +46,9 @@ public class PaymentController {
             payment.setUserId(request.getUserId());
             payment.setAmount(request.getAmount());
             payment.setPaymentMethod(request.getPaymentMethod());
-            payment.setPaymentType(request.getPaymentType());
             payment.setCurrency(request.getCurrency());
-            payment.setDescription(request.getDescription());
             payment.setIsSplitPayment(request.getIsSplitPayment());
             payment.setGroupOrderId(request.getGroupOrderId());
-            payment.setSplitDetails(request.getSplitDetails());
 
             Payment initiatedPayment = paymentService.initiatePayment(payment);
             return new ResponseEntity<>(initiatedPayment, HttpStatus.CREATED);

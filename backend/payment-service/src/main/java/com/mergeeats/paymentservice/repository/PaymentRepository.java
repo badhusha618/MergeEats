@@ -71,6 +71,9 @@ public interface PaymentRepository extends MongoRepository<Payment, String> {
     // Find payments by multiple order IDs (for group orders)
     List<Payment> findByOrderIdIn(List<String> orderIds);
 
+    // Find payments by group order ID
+    List<Payment> findByGroupOrderId(String groupOrderId);
+
     // Calculate total amount by customer and date range
     @Query(value = "{'customerId': ?0, 'status': 'COMPLETED', 'createdAt': {'$gte': ?1, '$lte': ?2}}", 
            fields = "{'amount': 1}")

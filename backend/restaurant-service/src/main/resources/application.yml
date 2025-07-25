@@ -6,12 +6,12 @@ server:
 spring:
   application:
     name: restaurant-service
-
+  
   data:
     mongodb:
-      uri: mongodb://localhost:27017/mergeeats-restaurants
+      uri: mongodb://admin:password123@localhost:27017/mergeeats-restaurants?authSource=admin
       auto-index-creation: true
-
+  
   kafka:
     bootstrap-servers: localhost:9092
     producer:
@@ -22,9 +22,14 @@ spring:
       key-deserializer: org.apache.kafka.common.serialization.StringDeserializer
       value-deserializer: org.springframework.kafka.support.serializer.JsonDeserializer
       properties:
-        spring.json.trusted.packages: "com.mergeeats.*"
+        spring.json.trusted.packages: "*"
 
-# Management endpoints
+# JWT Configuration
+jwt:
+  secret: mySecretKey123456789012345678901234567890
+  expiration: 86400000
+
+# Management endpoints for health checks
 management:
   endpoints:
     web:
@@ -40,6 +45,7 @@ springdoc:
     path: /api-docs
   swagger-ui:
     path: /swagger-ui.html
+    enabled: true
 
 # Logging
 logging:

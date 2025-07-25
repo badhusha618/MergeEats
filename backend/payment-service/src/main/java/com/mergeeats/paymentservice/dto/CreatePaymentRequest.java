@@ -1,7 +1,6 @@
 package com.mergeeats.paymentservice.dto;
 
-import com.mergeeats.common.models.Payment.PaymentMethod;
-import com.mergeeats.common.models.Payment.PaymentType;
+import com.mergeeats.common.enums.PaymentMethod;
 import jakarta.validation.constraints.*;
 import java.util.Map;
 
@@ -19,9 +18,6 @@ public class CreatePaymentRequest {
 
     @NotNull(message = "Payment method is required")
     private PaymentMethod paymentMethod;
-
-    @NotNull(message = "Payment type is required")
-    private PaymentType paymentType;
 
     @NotBlank(message = "Currency is required")
     @Size(min = 3, max = 3, message = "Currency must be 3 characters")
@@ -41,12 +37,11 @@ public class CreatePaymentRequest {
     public CreatePaymentRequest() {}
 
     public CreatePaymentRequest(String orderId, String userId, Double amount, 
-                              PaymentMethod paymentMethod, PaymentType paymentType) {
+                              PaymentMethod paymentMethod) {
         this.orderId = orderId;
         this.userId = userId;
         this.amount = amount;
         this.paymentMethod = paymentMethod;
-        this.paymentType = paymentType;
     }
 
     // Getters and Setters
@@ -80,14 +75,6 @@ public class CreatePaymentRequest {
 
     public void setPaymentMethod(PaymentMethod paymentMethod) {
         this.paymentMethod = paymentMethod;
-    }
-
-    public PaymentType getPaymentType() {
-        return paymentType;
-    }
-
-    public void setPaymentType(PaymentType paymentType) {
-        this.paymentType = paymentType;
     }
 
     public String getCurrency() {

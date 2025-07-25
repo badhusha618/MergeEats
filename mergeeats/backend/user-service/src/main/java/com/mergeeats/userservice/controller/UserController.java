@@ -17,7 +17,7 @@ import java.util.List;
 import java.util.Map;
 
 @RestController
-@RequestMapping("/api/users")
+@RequestMapping("/")
 @Tag(name = "User Management", description = "APIs for user registration, authentication, and profile management")
 public class UserController {
     

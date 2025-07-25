@@ -1,0 +1,137 @@
+
+> merchant-web-app@0.1.0 start
+> react-scripts start
+
+(node:44350) [DEP_WEBPACK_DEV_SERVER_ON_AFTER_SETUP_MIDDLEWARE] DeprecationWarning: 'onAfterSetupMiddleware' option is deprecated. Please use the 'setupMiddlewares' option.
+(Use `node --trace-deprecation ...` to show where the warning was created)
+(node:44350) [DEP_WEBPACK_DEV_SERVER_ON_BEFORE_SETUP_MIDDLEWARE] DeprecationWarning: 'onBeforeSetupMiddleware' option is deprecated. Please use the 'setupMiddlewares' option.
+Starting the development server...
+
+Failed to compile.
+
+Module not found: Error: Can't resolve './components/OrderManagement' in '/workspace/mergeeats/frontend/merchant-web-app/src'
+WARNING in [eslint] 
+src/App.tsx
+  Line 1:27:   'useEffect' is defined but never used  @typescript-eslint/no-unused-vars
+  Line 38:86:  'BarChart' is defined but never used   @typescript-eslint/no-unused-vars
+  Line 38:96:  'Bar' is defined but never used        @typescript-eslint/no-unused-vars
+
+ERROR in ./src/App.tsx 9:0-59
+Module not found: Error: Can't resolve './components/OrderManagement' in '/workspace/mergeeats/frontend/merchant-web-app/src'
+
+webpack compiled with 1 error and 1 warning
+ERROR in src/App.tsx:39:29
+TS2307: Cannot find module './components/OrderManagement' or its corresponding type declarations.
+    37 | } from '@mui/icons-material';
+    38 | import { LineChart, Line, XAxis, YAxis, CartesianGrid, Tooltip, ResponsiveContainer, BarChart, Bar, PieChart, Pie, Cell } from 'recharts';
+  > 39 | import OrderManagement from './components/OrderManagement';
+       |                             ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+    40 | import './App.css';
+    41 |
+    42 | const drawerWidth = 240;
+
+ERROR in src/App.tsx:166:9
+TS2769: No overload matches this call.
+  Overload 1 of 2, '(props: { component: ElementType<any, keyof IntrinsicElements>; } & GridBaseProps & { sx?: SxProps<Theme> | undefined; } & SystemProps<...> & Omit<...>): Element | null', gave the following error.
+    Property 'component' is missing in type '{ children: Element; item: true; xs: number; sm: number; md: number; }' but required in type '{ component: ElementType<any, keyof IntrinsicElements>; }'.
+  Overload 2 of 2, '(props: DefaultComponentProps<GridTypeMap<{}, "div">>): Element | null', gave the following error.
+    Type '{ children: Element; item: true; xs: number; sm: number; md: number; }' is not assignable to type 'IntrinsicAttributes & GridBaseProps & { sx?: SxProps<Theme> | undefined; } & SystemProps<Theme> & Omit<...>'.
+      Property 'item' does not exist on type 'IntrinsicAttributes & GridBaseProps & { sx?: SxProps<Theme> | undefined; } & SystemProps<Theme> & Omit<...>'.
+    164 |       {/* Stats Cards */}
+    165 |       <Grid container spacing={3} sx={{ mb: 3 }}>
+  > 166 |         <Grid item xs={12} sm={6} md={3}>
+        |         ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+    167 |           <Card sx={{ height: '100%', background: 'linear-gradient(45deg, #FE6B8B 30%, #FF8E53 90%)' }}>
+    168 |             <CardContent>
+    169 |               <Box sx={{ display: 'flex', alignItems: 'center', color: 'white' }}>
+
+ERROR in src/App.tsx:183:9
+TS2769: No overload matches this call.
+  Overload 1 of 2, '(props: { component: ElementType<any, keyof IntrinsicElements>; } & GridBaseProps & { sx?: SxProps<Theme> | undefined; } & SystemProps<...> & Omit<...>): Element | null', gave the following error.
+    Property 'component' is missing in type '{ children: Element; item: true; xs: number; sm: number; md: number; }' but required in type '{ component: ElementType<any, keyof IntrinsicElements>; }'.
+  Overload 2 of 2, '(props: DefaultComponentProps<GridTypeMap<{}, "div">>): Element | null', gave the following error.
+    Type '{ children: Element; item: true; xs: number; sm: number; md: number; }' is not assignable to type 'IntrinsicAttributes & GridBaseProps & { sx?: SxProps<Theme> | undefined; } & SystemProps<Theme> & Omit<...>'.
+      Property 'item' does not exist on type 'IntrinsicAttributes & GridBaseProps & { sx?: SxProps<Theme> | undefined; } & SystemProps<Theme> & Omit<...>'.
+    181 |           </Card>
+    182 |         </Grid>
+  > 183 |         <Grid item xs={12} sm={6} md={3}>
+        |         ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+    184 |           <Card sx={{ height: '100%', background: 'linear-gradient(45deg, #2196F3 30%, #21CBF3 90%)' }}>
+    185 |             <CardContent>
+    186 |               <Box sx={{ display: 'flex', alignItems: 'center', color: 'white' }}>
+
+ERROR in src/App.tsx:200:9
+TS2769: No overload matches this call.
+  Overload 1 of 2, '(props: { component: ElementType<any, keyof IntrinsicElements>; } & GridBaseProps & { sx?: SxProps<Theme> | undefined; } & SystemProps<...> & Omit<...>): Element | null', gave the following error.
+    Property 'component' is missing in type '{ children: Element; item: true; xs: number; sm: number; md: number; }' but required in type '{ component: ElementType<any, keyof IntrinsicElements>; }'.
+  Overload 2 of 2, '(props: DefaultComponentProps<GridTypeMap<{}, "div">>): Element | null', gave the following error.
+    Type '{ children: Element; item: true; xs: number; sm: number; md: number; }' is not assignable to type 'IntrinsicAttributes & GridBaseProps & { sx?: SxProps<Theme> | undefined; } & SystemProps<Theme> & Omit<...>'.
+      Property 'item' does not exist on type 'IntrinsicAttributes & GridBaseProps & { sx?: SxProps<Theme> | undefined; } & SystemProps<Theme> & Omit<...>'.
+    198 |           </Card>
+    199 |         </Grid>
+  > 200 |         <Grid item xs={12} sm={6} md={3}>
+        |         ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+    201 |           <Card sx={{ height: '100%', background: 'linear-gradient(45deg, #4CAF50 30%, #8BC34A 90%)' }}>
+    202 |             <CardContent>
+    203 |               <Box sx={{ display: 'flex', alignItems: 'center', color: 'white' }}>
+
+ERROR in src/App.tsx:217:9
+TS2769: No overload matches this call.
+  Overload 1 of 2, '(props: { component: ElementType<any, keyof IntrinsicElements>; } & GridBaseProps & { sx?: SxProps<Theme> | undefined; } & SystemProps<...> & Omit<...>): Element | null', gave the following error.
+    Property 'component' is missing in type '{ children: Element; item: true; xs: number; sm: number; md: number; }' but required in type '{ component: ElementType<any, keyof IntrinsicElements>; }'.
+  Overload 2 of 2, '(props: DefaultComponentProps<GridTypeMap<{}, "div">>): Element | null', gave the following error.
+    Type '{ children: Element; item: true; xs: number; sm: number; md: number; }' is not assignable to type 'IntrinsicAttributes & GridBaseProps & { sx?: SxProps<Theme> | undefined; } & SystemProps<Theme> & Omit<...>'.
+      Property 'item' does not exist on type 'IntrinsicAttributes & GridBaseProps & { sx?: SxProps<Theme> | undefined; } & SystemProps<Theme> & Omit<...>'.
+    215 |           </Card>
+    216 |         </Grid>
+  > 217 |         <Grid item xs={12} sm={6} md={3}>
+        |         ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+    218 |           <Card sx={{ height: '100%', background: 'linear-gradient(45deg, #FF9800 30%, #FFC107 90%)' }}>
+    219 |             <CardContent>
+    220 |               <Box sx={{ display: 'flex', alignItems: 'center', color: 'white' }}>
+
+ERROR in src/App.tsx:238:9
+TS2769: No overload matches this call.
+  Overload 1 of 2, '(props: { component: ElementType<any, keyof IntrinsicElements>; } & GridBaseProps & { sx?: SxProps<Theme> | undefined; } & SystemProps<...> & Omit<...>): Element | null', gave the following error.
+    Property 'component' is missing in type '{ children: Element; item: true; xs: number; md: number; }' but required in type '{ component: ElementType<any, keyof IntrinsicElements>; }'.
+  Overload 2 of 2, '(props: DefaultComponentProps<GridTypeMap<{}, "div">>): Element | null', gave the following error.
+    Type '{ children: Element; item: true; xs: number; md: number; }' is not assignable to type 'IntrinsicAttributes & GridBaseProps & { sx?: SxProps<Theme> | undefined; } & SystemProps<Theme> & Omit<...>'.
+      Property 'item' does not exist on type 'IntrinsicAttributes & GridBaseProps & { sx?: SxProps<Theme> | undefined; } & SystemProps<Theme> & Omit<...>'.
+    236 |       {/* Charts */}
+    237 |       <Grid container spacing={3} sx={{ mb: 3 }}>
+  > 238 |         <Grid item xs={12} md={8}>
+        |         ^^^^^^^^^^^^^^^^^^^^^^^^^^
+    239 |           <Card>
+    240 |             <CardContent>
+    241 |               <Typography variant="h6" gutterBottom>
+
+ERROR in src/App.tsx:257:9
+TS2769: No overload matches this call.
+  Overload 1 of 2, '(props: { component: ElementType<any, keyof IntrinsicElements>; } & GridBaseProps & { sx?: SxProps<Theme> | undefined; } & SystemProps<...> & Omit<...>): Element | null', gave the following error.
+    Property 'component' is missing in type '{ children: Element; item: true; xs: number; md: number; }' but required in type '{ component: ElementType<any, keyof IntrinsicElements>; }'.
+  Overload 2 of 2, '(props: DefaultComponentProps<GridTypeMap<{}, "div">>): Element | null', gave the following error.
+    Type '{ children: Element; item: true; xs: number; md: number; }' is not assignable to type 'IntrinsicAttributes & GridBaseProps & { sx?: SxProps<Theme> | undefined; } & SystemProps<Theme> & Omit<...>'.
+      Property 'item' does not exist on type 'IntrinsicAttributes & GridBaseProps & { sx?: SxProps<Theme> | undefined; } & SystemProps<Theme> & Omit<...>'.
+    255 |           </Card>
+    256 |         </Grid>
+  > 257 |         <Grid item xs={12} md={4}>
+        |         ^^^^^^^^^^^^^^^^^^^^^^^^^^
+    258 |           <Card>
+    259 |             <CardContent>
+    260 |               <Typography variant="h6" gutterBottom>
+
+ERROR in src/App.tsx:299:15
+TS2769: No overload matches this call.
+  Overload 1 of 2, '(props: { component: ElementType<any, keyof IntrinsicElements>; } & GridBaseProps & { sx?: SxProps<Theme> | undefined; } & SystemProps<...> & Omit<...>): Element | null', gave the following error.
+    Property 'component' is missing in type '{ children: Element; item: true; xs: number; key: string; }' but required in type '{ component: ElementType<any, keyof IntrinsicElements>; }'.
+  Overload 2 of 2, '(props: DefaultComponentProps<GridTypeMap<{}, "div">>): Element | null', gave the following error.
+    Type '{ children: Element; item: true; xs: number; key: string; }' is not assignable to type 'IntrinsicAttributes & GridBaseProps & { sx?: SxProps<Theme> | undefined; } & SystemProps<Theme> & Omit<...>'.
+      Property 'item' does not exist on type 'IntrinsicAttributes & GridBaseProps & { sx?: SxProps<Theme> | undefined; } & SystemProps<Theme> & Omit<...>'.
+    297 |           <Grid container spacing={2}>
+    298 |             {recentOrders.map((order) => (
+  > 299 |               <Grid item xs={12} key={order.id}>
+        |               ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+    300 |                 <Card variant="outlined">
+    301 |                   <CardContent sx={{ py: 1 }}>
+    302 |                     <Box sx={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center' }}>
+

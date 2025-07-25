@@ -1,8 +1,7 @@
 package com.mergeeats.paymentservice.service;
 
 import com.mergeeats.common.models.Payment;
-import com.mergeeats.common.models.Payment.PaymentMethod;
-import com.mergeeats.common.models.Payment.PaymentType;
+import com.mergeeats.common.enums.PaymentMethod;
 import com.mergeeats.common.enums.PaymentStatus;
 import com.mergeeats.paymentservice.repository.PaymentRepository;
 import org.slf4j.Logger;
@@ -34,7 +33,6 @@ public class PaymentService {
             // Set initial values
             payment.setStatus(PaymentStatus.PENDING);
             payment.setRetryCount(0);
-            payment.setMaxRetries(3);
             
             // Calculate fees
             calculateFees(payment);
@@ -82,10 +80,6 @@ public class PaymentService {
                 payment.setStatus(PaymentStatus.FAILED);
                 payment.setFailureReason("Gateway processing failed");
                 payment.setRetryCount(payment.getRetryCount() + 1);
-                
-                if (payment.canRetry()) {
-                    payment.setNextRetryAt(LocalDateTime.now().plusMinutes(5));
-                }
             }
 
             Payment savedPayment = paymentRepository.save(payment);
@@ -116,7 +110,7 @@ public class PaymentService {
                 throw new RuntimeException("Cannot refund non-completed payment");
             }
 
-            double remainingAmount = payment.getRemainingRefundAmount();
+            double remainingAmount = payment.getAmount() - payment.getRefundedAmount();
             if (refundAmount > remainingAmount) {
                 throw new RuntimeException("Refund amount exceeds remaining refundable amount");
             }
@@ -125,14 +119,15 @@ public class PaymentService {
             boolean refundSuccess = processRefundWithGateway(payment, refundAmount);
             
             if (refundSuccess) {
-                payment.setRefundAmount(payment.getRefundAmount() + refundAmount);
+                payment.setRefundedAmount(payment.getRefundedAmount() + refundAmount);
                 payment.setRefundReason(reason);
                 payment.setRefundedAt(LocalDateTime.now());
                 payment.setRefundTransactionId(generateTransactionId());
 
                 // Update payment status if fully refunded
-                if (payment.isFullyRefunded()) {
+                if (payment.getRefundedAmount().equals(payment.getAmount())) {
                     payment.setStatus(PaymentStatus.REFUNDED);
+                    payment.setIsRefunded(true);
                 } else {
                     payment.setStatus(PaymentStatus.PARTIALLY_REFUNDED);
                 }
@@ -169,11 +164,9 @@ public class PaymentService {
                 splitPayment.setUserId(userId);
                 splitPayment.setAmount(amount);
                 splitPayment.setPaymentMethod(paymentMethod);
-                splitPayment.setPaymentType(PaymentType.ORDER_PAYMENT);
                 splitPayment.setCurrency(currency);
                 splitPayment.setIsSplitPayment(true);
                 splitPayment.setGroupOrderId(groupOrderId);
-                splitPayment.setSplitDetails(splitDetails);
 
                 Payment initiatedPayment = initiatePayment(splitPayment);
                 splitPayments.add(initiatedPayment);
@@ -203,7 +196,7 @@ public class PaymentService {
     }
 
     public List<Payment> getPaymentsByUserId(String userId) {
-        return paymentRepository.findByUserId(userId);
+        return paymentRepository.findByCustomerId(userId);
     }
 
     public List<Payment> getPaymentsByStatus(PaymentStatus status) {
@@ -211,7 +204,7 @@ public class PaymentService {
     }
 
     public List<Payment> getUserPaymentHistory(String userId, int limit) {
-        return paymentRepository.findByUserId(userId)
+        return paymentRepository.findByCustomerId(userId)
                 .stream()
                 .sorted((p1, p2) -> p2.getCreatedAt().compareTo(p1.getCreatedAt()))
                 .limit(limit)
@@ -222,10 +215,10 @@ public class PaymentService {
     public void retryFailedPayments() {
         try {
             LocalDateTime now = LocalDateTime.now();
-            List<Payment> failedPayments = paymentRepository.findFailedPaymentsDueForRetry(now);
+            List<Payment> failedPayments = paymentRepository.findRetryableFailedPayments(3, now.minusHours(1));
 
             for (Payment payment : failedPayments) {
-                if (payment.canRetry()) {
+                if (payment.getRetryCount() < 3) {
                     logger.info("Retrying payment: {}", payment.getPaymentId());
                     processPayment(payment.getPaymentId());
                 }
@@ -239,7 +232,7 @@ public class PaymentService {
     public void timeoutPendingPayments() {
         try {
             LocalDateTime cutoffTime = LocalDateTime.now().minusMinutes(30); // 30 minutes timeout
-            List<Payment> pendingPayments = paymentRepository.findPendingPaymentsOlderThan(cutoffTime);
+            List<Payment> pendingPayments = paymentRepository.findExpiredPendingPayments(cutoffTime);
 
             for (Payment payment : pendingPayments) {
                 payment.setStatus(PaymentStatus.FAILED);
@@ -291,7 +284,7 @@ public class PaymentService {
             // Gateway fees
             double totalGatewayFees = allPayments.stream()
                     .filter(p -> p.getStatus() == PaymentStatus.COMPLETED)
-                    .mapToDouble(Payment::getGatewayFee)
+                    .mapToDouble(Payment::getPlatformFee)
                     .sum();
             stats.put("totalGatewayFees", totalGatewayFees);
 
@@ -338,9 +331,6 @@ public class PaymentService {
         if (payment.getPaymentMethod() == null) {
             throw new IllegalArgumentException("Payment method is required");
         }
-        if (payment.getPaymentType() == null) {
-            throw new IllegalArgumentException("Payment type is required");
-        }
     }
 
     private void calculateFees(Payment payment) {
@@ -351,17 +341,9 @@ public class PaymentService {
         platformFee = Math.max(5.0, Math.min(50.0, platformFee));
         payment.setPlatformFee(platformFee);
 
-        // Calculate gateway fee (2.9%)
-        double gatewayFee = amount * 0.029;
-        payment.setGatewayFee(gatewayFee);
-
         // Calculate tax (18% GST on platform fee)
         double taxAmount = platformFee * 0.18;
         payment.setTaxAmount(taxAmount);
-
-        // Calculate net amount
-        double netAmount = amount - platformFee - gatewayFee - taxAmount;
-        payment.setNetAmount(netAmount);
     }
 
     private boolean processWithGateway(Payment payment) {
@@ -375,8 +357,7 @@ public class PaymentService {
             boolean success = random.nextDouble() < 0.9;
             
             if (success) {
-                payment.setGatewayPaymentId("pay_" + generateTransactionId());
-                payment.setGatewayOrderId("order_" + generateTransactionId());
+                payment.setGatewayTransactionId("pay_" + generateTransactionId());
             }
             
             return success;
@@ -431,8 +412,8 @@ public class PaymentService {
                 public final String paymentId = payment.getPaymentId();
                 public final String orderId = payment.getOrderId();
                 public final String userId = payment.getUserId();
-                public final Double refundAmount = refundAmount;
-                public final String reason = reason;
+                public final Double refundedAmount = refundAmount;
+                public final String refundReason = reason;
                 public final String refundTransactionId = payment.getRefundTransactionId();
                 public final LocalDateTime timestamp = LocalDateTime.now();
             };

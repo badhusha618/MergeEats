@@ -18,7 +18,7 @@ import java.util.List;
 import java.util.Map;
 
 @RestController
-@RequestMapping("/api/orders")
+@RequestMapping("/")
 @Tag(name = "Order Management", description = "APIs for order creation, management, and AI-powered merging")
 public class OrderController {
     
