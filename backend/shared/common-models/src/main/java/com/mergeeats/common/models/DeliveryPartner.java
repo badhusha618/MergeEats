@@ -1,10 +1,13 @@
 package com.mergeeats.common.models;
 
+import com.mergeeats.common.enums.DeliveryPartnerStatus;
+import com.mergeeats.common.enums.VehicleType;
 import org.springframework.data.annotation.CreatedDate;
 import org.springframework.data.annotation.Id;
 import org.springframework.data.annotation.LastModifiedDate;
 import org.springframework.data.mongodb.core.mapping.Document;
 import org.springframework.data.mongodb.core.index.Indexed;
+
 import jakarta.validation.constraints.*;
 import java.time.LocalDateTime;
 import java.util.List;
@@ -32,8 +35,8 @@ public class DeliveryPartner {
     @Pattern(regexp = "^[+]?[1-9]\\d{1,14}$", message = "Invalid phone number format")
     private String phoneNumber;
 
-    @NotBlank(message = "Vehicle type is required")
-    private String vehicleType; // BIKE, SCOOTER, CAR, BICYCLE
+    @NotNull(message = "Vehicle type is required")
+    private VehicleType vehicleType;
 
     @NotBlank(message = "Vehicle number is required")
     private String vehicleNumber;
@@ -41,16 +44,8 @@ public class DeliveryPartner {
     @NotBlank(message = "License number is required")
     private String licenseNumber;
 
-    private Address currentLocation;
-
-    @NotNull(message = "Availability status is required")
-    private Boolean isAvailable = false;
-
-    @NotNull(message = "Online status is required")
-    private Boolean isOnline = false;
-
-    @NotNull(message = "Active status is required")
-    private Boolean isActive = true;
+    @NotNull(message = "Status is required")
+    private DeliveryPartnerStatus status = DeliveryPartnerStatus.OFFLINE;
 
     @DecimalMin(value = "0.0", message = "Rating cannot be negative")
     @DecimalMax(value = "5.0", message = "Rating cannot exceed 5.0")
@@ -59,21 +54,16 @@ public class DeliveryPartner {
     @Min(value = 0, message = "Total deliveries cannot be negative")
     private Integer totalDeliveries = 0;
 
-    @Min(value = 0, message = "Completed deliveries cannot be negative")
-    private Integer completedDeliveries = 0;
+    private Address currentLocation;
 
-    @Min(value = 0, message = "Cancelled deliveries cannot be negative")
-    private Integer cancelledDeliveries = 0;
-
-    private List<String> currentOrderIds;
+    private List<String> serviceAreas;
 
     @DecimalMin(value = "0.0", message = "Earnings cannot be negative")
     private Double totalEarnings = 0.0;
 
-    @DecimalMin(value = "0.0", message = "Today's earnings cannot be negative")
-    private Double todayEarnings = 0.0;
+    private Boolean isVerified = false;
 
-    private LocalDateTime lastLocationUpdate;
+    private Boolean isActive = true;
 
     private LocalDateTime lastActiveTime;
 
@@ -87,7 +77,7 @@ public class DeliveryPartner {
     public DeliveryPartner() {}
 
     public DeliveryPartner(String userId, String fullName, String email, String phoneNumber, 
-                          String vehicleType, String vehicleNumber, String licenseNumber) {
+                          VehicleType vehicleType, String vehicleNumber, String licenseNumber) {
         this.userId = userId;
         this.fullName = fullName;
         this.email = email;
@@ -138,11 +128,11 @@ public class DeliveryPartner {
         this.phoneNumber = phoneNumber;
     }
 
-    public String getVehicleType() {
+    public VehicleType getVehicleType() {
         return vehicleType;
     }
 
-    public void setVehicleType(String vehicleType) {
+    public void setVehicleType(VehicleType vehicleType) {
         this.vehicleType = vehicleType;
     }
 
@@ -162,36 +152,12 @@ public class DeliveryPartner {
         this.licenseNumber = licenseNumber;
     }
 
-    public Address getCurrentLocation() {
-        return currentLocation;
+    public DeliveryPartnerStatus getStatus() {
+        return status;
     }
 
-    public void setCurrentLocation(Address currentLocation) {
-        this.currentLocation = currentLocation;
-    }
-
-    public Boolean getIsAvailable() {
-        return isAvailable;
-    }
-
-    public void setIsAvailable(Boolean isAvailable) {
-        this.isAvailable = isAvailable;
-    }
-
-    public Boolean getIsOnline() {
-        return isOnline;
-    }
-
-    public void setIsOnline(Boolean isOnline) {
-        this.isOnline = isOnline;
-    }
-
-    public Boolean getIsActive() {
-        return isActive;
-    }
-
-    public void setIsActive(Boolean isActive) {
-        this.isActive = isActive;
+    public void setStatus(DeliveryPartnerStatus status) {
+        this.status = status;
     }
 
     public Double getRating() {
@@ -210,28 +176,20 @@ public class DeliveryPartner {
         this.totalDeliveries = totalDeliveries;
     }
 
-    public Integer getCompletedDeliveries() {
-        return completedDeliveries;
+    public Address getCurrentLocation() {
+        return currentLocation;
     }
 
-    public void setCompletedDeliveries(Integer completedDeliveries) {
-        this.completedDeliveries = completedDeliveries;
+    public void setCurrentLocation(Address currentLocation) {
+        this.currentLocation = currentLocation;
     }
 
-    public Integer getCancelledDeliveries() {
-        return cancelledDeliveries;
+    public List<String> getServiceAreas() {
+        return serviceAreas;
     }
 
-    public void setCancelledDeliveries(Integer cancelledDeliveries) {
-        this.cancelledDeliveries = cancelledDeliveries;
-    }
-
-    public List<String> getCurrentOrderIds() {
-        return currentOrderIds;
-    }
-
-    public void setCurrentOrderIds(List<String> currentOrderIds) {
-        this.currentOrderIds = currentOrderIds;
+    public void setServiceAreas(List<String> serviceAreas) {
+        this.serviceAreas = serviceAreas;
     }
 
     public Double getTotalEarnings() {
@@ -242,20 +200,20 @@ public class DeliveryPartner {
         this.totalEarnings = totalEarnings;
     }
 
-    public Double getTodayEarnings() {
-        return todayEarnings;
+    public Boolean getIsVerified() {
+        return isVerified;
     }
 
-    public void setTodayEarnings(Double todayEarnings) {
-        this.todayEarnings = todayEarnings;
+    public void setIsVerified(Boolean isVerified) {
+        this.isVerified = isVerified;
     }
 
-    public LocalDateTime getLastLocationUpdate() {
-        return lastLocationUpdate;
+    public Boolean getIsActive() {
+        return isActive;
     }
 
-    public void setLastLocationUpdate(LocalDateTime lastLocationUpdate) {
-        this.lastLocationUpdate = lastLocationUpdate;
+    public void setIsActive(Boolean isActive) {
+        this.isActive = isActive;
     }
 
     public LocalDateTime getLastActiveTime() {

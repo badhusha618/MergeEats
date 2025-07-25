@@ -1,58 +1,52 @@
 package com.mergeeats.deliveryservice.service;
 
-import com.mergeeats.common.models.Address;
 import com.mergeeats.common.models.DeliveryPartner;
-import com.mergeeats.deliveryservice.dto.CreateDeliveryPartnerRequest;
-import com.mergeeats.deliveryservice.dto.LocationUpdateRequest;
+import com.mergeeats.common.models.Address;
+import com.mergeeats.common.enums.DeliveryPartnerStatus;
+import com.mergeeats.common.enums.VehicleType;
 import com.mergeeats.deliveryservice.repository.DeliveryPartnerRepository;
-import org.slf4j.Logger;
-import org.slf4j.LoggerFactory;
+import com.mergeeats.deliveryservice.repository.DeliveryRepository;
+import com.mergeeats.deliveryservice.dto.RegisterDeliveryPartnerRequest;
+
 import org.springframework.beans.factory.annotation.Autowired;
-import org.springframework.beans.factory.annotation.Value;
-import org.springframework.data.redis.core.RedisTemplate;
 import org.springframework.kafka.core.KafkaTemplate;
 import org.springframework.stereotype.Service;
+import org.springframework.transaction.annotation.Transactional;
+
 import java.time.LocalDateTime;
 import java.util.*;
-import java.util.concurrent.TimeUnit;
 
 @Service
+@Transactional
 public class DeliveryPartnerService {
-
-    private static final Logger logger = LoggerFactory.getLogger(DeliveryPartnerService.class);
 
     @Autowired
     private DeliveryPartnerRepository deliveryPartnerRepository;
 
     @Autowired
-    private KafkaTemplate<String, Object> kafkaTemplate;
+    private DeliveryRepository deliveryRepository;
 
     @Autowired
-    private RedisTemplate<String, Object> redisTemplate;
+    private KafkaTemplate<String, Object> kafkaTemplate;
 
-    @Value("${delivery.assignment.max-distance-km:10.0}")
-    private Double maxAssignmentDistance;
-
-    @Value("${delivery.assignment.max-orders-per-partner:5}")
-    private Integer maxOrdersPerPartner;
-
-    @Value("${delivery.tracking.location-cache-ttl-minutes:5}")
-    private Long locationCacheTtl;
-
-    // Create delivery partner
-    public DeliveryPartner createDeliveryPartner(CreateDeliveryPartnerRequest request) {
-        logger.info("Creating delivery partner for user: {}", request.getUserId());
-
+    // Register new delivery partner
+    public DeliveryPartner registerDeliveryPartner(RegisterDeliveryPartnerRequest request) {
         // Check if partner already exists
         Optional<DeliveryPartner> existingPartner = deliveryPartnerRepository.findByUserId(request.getUserId());
         if (existingPartner.isPresent()) {
-            throw new RuntimeException("Delivery partner already exists for user: " + request.getUserId());
+            throw new RuntimeException("Delivery partner already registered for user: " + request.getUserId());
         }
 
-        // Check if email already exists
+        // Check for duplicate email
         Optional<DeliveryPartner> existingEmail = deliveryPartnerRepository.findByEmail(request.getEmail());
         if (existingEmail.isPresent()) {
             throw new RuntimeException("Email already registered: " + request.getEmail());
+        }
+
+        // Check for duplicate vehicle number
+        Optional<DeliveryPartner> existingVehicle = deliveryPartnerRepository.findByVehicleNumber(request.getVehicleNumber());
+        if (existingVehicle.isPresent()) {
+            throw new RuntimeException("Vehicle number already registered: " + request.getVehicleNumber());
         }
 
         DeliveryPartner partner = new DeliveryPartner(
@@ -65,321 +59,325 @@ public class DeliveryPartnerService {
             request.getLicenseNumber()
         );
 
-        if (request.getCurrentLocation() != null) {
-            partner.setCurrentLocation(request.getCurrentLocation());
-            partner.setLastLocationUpdate(LocalDateTime.now());
-        }
-
-        DeliveryPartner savedPartner = deliveryPartnerRepository.save(partner);
-
-        // Cache partner location
-        cachePartnerLocation(savedPartner.getPartnerId(), request.getCurrentLocation());
+        partner.setServiceAreas(request.getServiceAreas());
+        partner = deliveryPartnerRepository.save(partner);
 
         // Publish event
-        publishPartnerEvent("PARTNER_CREATED", savedPartner);
+        publishPartnerEvent("partner.registered", partner);
 
-        logger.info("Delivery partner created successfully: {}", savedPartner.getPartnerId());
-        return savedPartner;
+        return partner;
     }
 
     // Get delivery partner by ID
-    public DeliveryPartner getDeliveryPartnerById(String partnerId) {
-        return deliveryPartnerRepository.findById(partnerId)
-            .orElseThrow(() -> new RuntimeException("Delivery partner not found: " + partnerId));
+    public Optional<DeliveryPartner> getDeliveryPartnerById(String partnerId) {
+        return deliveryPartnerRepository.findById(partnerId);
     }
 
     // Get delivery partner by user ID
-    public DeliveryPartner getDeliveryPartnerByUserId(String userId) {
-        return deliveryPartnerRepository.findByUserId(userId)
-            .orElseThrow(() -> new RuntimeException("Delivery partner not found for user: " + userId));
+    public Optional<DeliveryPartner> getDeliveryPartnerByUserId(String userId) {
+        return deliveryPartnerRepository.findByUserId(userId);
     }
 
-    // Update partner availability
-    public DeliveryPartner updateAvailability(String partnerId, Boolean isAvailable) {
-        DeliveryPartner partner = getDeliveryPartnerById(partnerId);
-        partner.setIsAvailable(isAvailable);
-        partner.setLastActiveTime(LocalDateTime.now());
-
-        DeliveryPartner updatedPartner = deliveryPartnerRepository.save(partner);
-
-        // Publish event
-        publishPartnerEvent("PARTNER_AVAILABILITY_UPDATED", updatedPartner);
-
-        logger.info("Partner availability updated: {} - {}", partnerId, isAvailable);
-        return updatedPartner;
-    }
-
-    // Update partner online status
-    public DeliveryPartner updateOnlineStatus(String partnerId, Boolean isOnline) {
-        DeliveryPartner partner = getDeliveryPartnerById(partnerId);
-        partner.setIsOnline(isOnline);
-        partner.setLastActiveTime(LocalDateTime.now());
-
-        if (!isOnline) {
-            partner.setIsAvailable(false); // Offline partners can't be available
+    // Update partner status
+    public DeliveryPartner updatePartnerStatus(String partnerId, DeliveryPartnerStatus status) {
+        Optional<DeliveryPartner> partnerOpt = deliveryPartnerRepository.findById(partnerId);
+        if (partnerOpt.isEmpty()) {
+            throw new RuntimeException("Delivery partner not found: " + partnerId);
         }
 
-        DeliveryPartner updatedPartner = deliveryPartnerRepository.save(partner);
+        DeliveryPartner partner = partnerOpt.get();
+        DeliveryPartnerStatus oldStatus = partner.getStatus();
+        partner.setStatus(status);
+        partner.setLastActiveTime(LocalDateTime.now());
 
-        // Publish event
-        publishPartnerEvent("PARTNER_ONLINE_STATUS_UPDATED", updatedPartner);
+        partner = deliveryPartnerRepository.save(partner);
 
-        logger.info("Partner online status updated: {} - {}", partnerId, isOnline);
-        return updatedPartner;
+        // Publish status change event
+        publishPartnerStatusEvent(partner, oldStatus, status);
+
+        return partner;
     }
 
     // Update partner location
-    public DeliveryPartner updateLocation(String partnerId, LocationUpdateRequest request) {
-        DeliveryPartner partner = getDeliveryPartnerById(partnerId);
+    public DeliveryPartner updatePartnerLocation(String partnerId, Address location) {
+        Optional<DeliveryPartner> partnerOpt = deliveryPartnerRepository.findById(partnerId);
+        if (partnerOpt.isEmpty()) {
+            throw new RuntimeException("Delivery partner not found: " + partnerId);
+        }
 
-        Address location = new Address();
-        location.setLatitude(request.getLatitude());
-        location.setLongitude(request.getLongitude());
-
+        DeliveryPartner partner = partnerOpt.get();
         partner.setCurrentLocation(location);
-        partner.setLastLocationUpdate(LocalDateTime.now());
+        partner.setLastActiveTime(LocalDateTime.now());
 
-        DeliveryPartner updatedPartner = deliveryPartnerRepository.save(partner);
+        partner = deliveryPartnerRepository.save(partner);
 
-        // Cache location for real-time tracking
-        cachePartnerLocation(partnerId, location);
+        // Publish location update
+        publishLocationUpdate(partner);
 
-        // Publish location update event
-        Map<String, Object> locationEvent = new HashMap<>();
-        locationEvent.put("partnerId", partnerId);
-        locationEvent.put("latitude", request.getLatitude());
-        locationEvent.put("longitude", request.getLongitude());
-        locationEvent.put("status", request.getStatus());
-        locationEvent.put("timestamp", LocalDateTime.now());
-
-        kafkaTemplate.send("partner-location-updates", locationEvent);
-
-        return updatedPartner;
+        return partner;
     }
 
-    // Find available partners in area
-    public List<DeliveryPartner> findAvailablePartnersInArea(Double centerLat, Double centerLng, Double radiusKm) {
-        // Calculate bounding box
-        Double latRange = radiusKm / 111.0; // Approximate km to degree conversion
-        Double lngRange = radiusKm / (111.0 * Math.cos(Math.toRadians(centerLat)));
+    // Verify delivery partner
+    public DeliveryPartner verifyDeliveryPartner(String partnerId) {
+        Optional<DeliveryPartner> partnerOpt = deliveryPartnerRepository.findById(partnerId);
+        if (partnerOpt.isEmpty()) {
+            throw new RuntimeException("Delivery partner not found: " + partnerId);
+        }
 
-        Double minLat = centerLat - latRange;
-        Double maxLat = centerLat + latRange;
-        Double minLng = centerLng - lngRange;
-        Double maxLng = centerLng + lngRange;
+        DeliveryPartner partner = partnerOpt.get();
+        partner.setIsVerified(true);
 
-        List<DeliveryPartner> partners = deliveryPartnerRepository.findAvailablePartnersInArea(minLat, maxLat, minLng, maxLng);
+        partner = deliveryPartnerRepository.save(partner);
 
-        // Filter by exact distance and capacity
-        return partners.stream()
-            .filter(partner -> {
-                if (partner.getCurrentLocation() == null) return false;
-                
-                double distance = calculateDistance(
-                    centerLat, centerLng,
-                    partner.getCurrentLocation().getLatitude(),
-                    partner.getCurrentLocation().getLongitude()
-                );
-                
-                int currentOrders = partner.getCurrentOrderIds() != null ? partner.getCurrentOrderIds().size() : 0;
-                
-                return distance <= radiusKm && currentOrders < maxOrdersPerPartner;
-            })
-            .sorted((p1, p2) -> {
-                // Sort by rating (descending) then by current orders (ascending)
-                int ratingCompare = Double.compare(p2.getRating(), p1.getRating());
-                if (ratingCompare != 0) return ratingCompare;
-                
-                int orders1 = p1.getCurrentOrderIds() != null ? p1.getCurrentOrderIds().size() : 0;
-                int orders2 = p2.getCurrentOrderIds() != null ? p2.getCurrentOrderIds().size() : 0;
-                return Integer.compare(orders1, orders2);
-            })
-            .toList();
+        // Publish verification event
+        publishPartnerEvent("partner.verified", partner);
+
+        return partner;
     }
 
-    // Find best partner for delivery
+    // Activate/Deactivate partner
+    public DeliveryPartner togglePartnerActivation(String partnerId, boolean isActive) {
+        Optional<DeliveryPartner> partnerOpt = deliveryPartnerRepository.findById(partnerId);
+        if (partnerOpt.isEmpty()) {
+            throw new RuntimeException("Delivery partner not found: " + partnerId);
+        }
+
+        DeliveryPartner partner = partnerOpt.get();
+        partner.setIsActive(isActive);
+
+        if (!isActive) {
+            partner.setStatus(DeliveryPartnerStatus.INACTIVE);
+        }
+
+        partner = deliveryPartnerRepository.save(partner);
+
+        // Publish activation event
+        publishPartnerEvent(isActive ? "partner.activated" : "partner.deactivated", partner);
+
+        return partner;
+    }
+
+    // Get available partners
+    public List<DeliveryPartner> getAvailablePartners() {
+        return deliveryPartnerRepository.findAvailablePartners();
+    }
+
+    // Get partners by status
+    public List<DeliveryPartner> getPartnersByStatus(DeliveryPartnerStatus status) {
+        return deliveryPartnerRepository.findByStatus(status);
+    }
+
+    // Find partners in area for assignment
+    public List<DeliveryPartner> findPartnersInArea(Double latitude, Double longitude, Double radiusKm) {
+        double[] bounds = calculateSearchBounds(latitude, longitude, radiusKm);
+        return deliveryPartnerRepository.findPartnersInArea(bounds[0], bounds[1], bounds[2], bounds[3]);
+    }
+
+    // Find best partner for delivery (used by DeliveryService)
     public DeliveryPartner findBestPartnerForDelivery(Double pickupLat, Double pickupLng) {
-        List<DeliveryPartner> availablePartners = findAvailablePartnersInArea(pickupLat, pickupLng, maxAssignmentDistance);
+        List<DeliveryPartner> availablePartners = findPartnersInArea(pickupLat, pickupLng, 10.0);
         
         if (availablePartners.isEmpty()) {
-            throw new RuntimeException("No available delivery partners found in the area");
+            return null;
         }
 
-        // Return the best partner (already sorted by rating and current orders)
-        return availablePartners.get(0);
-    }
-
-    // Assign order to partner
-    public DeliveryPartner assignOrderToPartner(String partnerId, String orderId) {
-        DeliveryPartner partner = getDeliveryPartnerById(partnerId);
-
-        List<String> currentOrders = partner.getCurrentOrderIds();
-        if (currentOrders == null) {
-            currentOrders = new ArrayList<>();
-        }
-
-        if (currentOrders.size() >= maxOrdersPerPartner) {
-            throw new RuntimeException("Partner has reached maximum order capacity");
-        }
-
-        currentOrders.add(orderId);
-        partner.setCurrentOrderIds(currentOrders);
-
-        // Update availability if at capacity
-        if (currentOrders.size() >= maxOrdersPerPartner) {
-            partner.setIsAvailable(false);
-        }
-
-        DeliveryPartner updatedPartner = deliveryPartnerRepository.save(partner);
-
-        // Publish event
-        Map<String, Object> assignmentEvent = new HashMap<>();
-        assignmentEvent.put("partnerId", partnerId);
-        assignmentEvent.put("orderId", orderId);
-        assignmentEvent.put("timestamp", LocalDateTime.now());
-        kafkaTemplate.send("order-assignments", assignmentEvent);
-
-        logger.info("Order {} assigned to partner {}", orderId, partnerId);
-        return updatedPartner;
-    }
-
-    // Complete order for partner
-    public DeliveryPartner completeOrderForPartner(String partnerId, String orderId) {
-        DeliveryPartner partner = getDeliveryPartnerById(partnerId);
-
-        List<String> currentOrders = partner.getCurrentOrderIds();
-        if (currentOrders != null) {
-            currentOrders.remove(orderId);
-            partner.setCurrentOrderIds(currentOrders);
-        }
-
-        // Update stats
-        partner.setCompletedDeliveries(partner.getCompletedDeliveries() + 1);
-        partner.setTotalDeliveries(partner.getTotalDeliveries() + 1);
-
-        // Make available again if was at capacity
-        if (!partner.getIsAvailable() && partner.getIsOnline()) {
-            partner.setIsAvailable(true);
-        }
-
-        DeliveryPartner updatedPartner = deliveryPartnerRepository.save(partner);
-
-        // Publish event
-        publishPartnerEvent("ORDER_COMPLETED", updatedPartner);
-
-        logger.info("Order {} completed by partner {}", orderId, partnerId);
-        return updatedPartner;
-    }
-
-    // Update partner rating
-    public DeliveryPartner updatePartnerRating(String partnerId, Double newRating) {
-        DeliveryPartner partner = getDeliveryPartnerById(partnerId);
-
-        // Calculate weighted average rating
-        double currentRating = partner.getRating();
-        int totalDeliveries = partner.getCompletedDeliveries();
-
-        if (totalDeliveries == 0) {
-            partner.setRating(newRating);
-        } else {
-            double weightedRating = ((currentRating * totalDeliveries) + newRating) / (totalDeliveries + 1);
-            partner.setRating(Math.round(weightedRating * 100.0) / 100.0); // Round to 2 decimal places
-        }
-
-        DeliveryPartner updatedPartner = deliveryPartnerRepository.save(partner);
-
-        // Publish event
-        publishPartnerEvent("PARTNER_RATING_UPDATED", updatedPartner);
-
-        logger.info("Partner rating updated: {} - {}", partnerId, updatedPartner.getRating());
-        return updatedPartner;
+        // Find partner with best combination of distance and rating
+        return availablePartners.stream()
+            .min((p1, p2) -> {
+                double distance1 = calculateDistance(pickupLat, pickupLng, 
+                    p1.getCurrentLocation().getLatitude(), p1.getCurrentLocation().getLongitude());
+                double distance2 = calculateDistance(pickupLat, pickupLng, 
+                    p2.getCurrentLocation().getLatitude(), p2.getCurrentLocation().getLongitude());
+                
+                // Weighted score: 70% distance, 30% rating
+                double score1 = distance1 * 0.7 - (p1.getRating() * 0.3);
+                double score2 = distance2 * 0.7 - (p2.getRating() * 0.3);
+                
+                return Double.compare(score1, score2);
+            })
+            .orElse(null);
     }
 
     // Get partner statistics
     public Map<String, Object> getPartnerStatistics(String partnerId) {
-        DeliveryPartner partner = getDeliveryPartnerById(partnerId);
+        Optional<DeliveryPartner> partnerOpt = deliveryPartnerRepository.findById(partnerId);
+        if (partnerOpt.isEmpty()) {
+            throw new RuntimeException("Delivery partner not found: " + partnerId);
+        }
 
+        DeliveryPartner partner = partnerOpt.get();
         Map<String, Object> stats = new HashMap<>();
+
         stats.put("partnerId", partnerId);
-        stats.put("totalDeliveries", partner.getTotalDeliveries());
-        stats.put("completedDeliveries", partner.getCompletedDeliveries());
-        stats.put("cancelledDeliveries", partner.getCancelledDeliveries());
+        stats.put("fullName", partner.getFullName());
+        stats.put("status", partner.getStatus().name());
         stats.put("rating", partner.getRating());
+        stats.put("totalDeliveries", partner.getTotalDeliveries());
         stats.put("totalEarnings", partner.getTotalEarnings());
-        stats.put("todayEarnings", partner.getTodayEarnings());
-        stats.put("currentOrders", partner.getCurrentOrderIds() != null ? partner.getCurrentOrderIds().size() : 0);
-        stats.put("isAvailable", partner.getIsAvailable());
-        stats.put("isOnline", partner.getIsOnline());
+        stats.put("isVerified", partner.getIsVerified());
+        stats.put("isActive", partner.getIsActive());
+        stats.put("vehicleType", partner.getVehicleType().name());
+        stats.put("joinedDate", partner.getCreatedAt());
+        stats.put("lastActiveTime", partner.getLastActiveTime());
+
+        // Calculate additional metrics
+        LocalDateTime monthStart = LocalDateTime.now().withDayOfMonth(1).withHour(0).withMinute(0).withSecond(0);
+        long monthlyDeliveries = deliveryRepository.findCompletedDeliveriesByPartnerInPeriod(
+            partnerId, monthStart, LocalDateTime.now()).size();
+        stats.put("monthlyDeliveries", monthlyDeliveries);
+
+        // Calculate average delivery time (if available)
+        // This would require additional tracking in the delivery model
+        stats.put("averageDeliveryTime", "N/A");
 
         return stats;
     }
 
-    // Get all available partners
-    public List<DeliveryPartner> getAvailablePartners() {
-        return deliveryPartnerRepository.findByIsAvailableAndIsOnlineAndIsActive(true, true, true);
+    // Get delivery statistics (system-wide)
+    public Map<String, Object> getDeliveryStatistics() {
+        Map<String, Object> stats = new HashMap<>();
+
+        // Partner statistics
+        long totalPartners = deliveryPartnerRepository.count();
+        long activePartners = deliveryPartnerRepository.countByIsActive(true);
+        long verifiedPartners = deliveryPartnerRepository.countByIsVerified(true);
+        long onlinePartners = deliveryPartnerRepository.countByStatus(DeliveryPartnerStatus.ONLINE);
+
+        stats.put("totalPartners", totalPartners);
+        stats.put("activePartners", activePartners);
+        stats.put("verifiedPartners", verifiedPartners);
+        stats.put("onlinePartners", onlinePartners);
+
+        // Vehicle type distribution
+        Map<String, Long> vehicleDistribution = new HashMap<>();
+        for (VehicleType vehicleType : VehicleType.values()) {
+            long count = deliveryPartnerRepository.findByVehicleType(vehicleType).size();
+            vehicleDistribution.put(vehicleType.name(), count);
+        }
+        stats.put("vehicleDistribution", vehicleDistribution);
+
+        // Delivery statistics
+        long totalDeliveries = deliveryRepository.count();
+        stats.put("totalDeliveries", totalDeliveries);
+
+        // Top performing partners
+        List<DeliveryPartner> topPartners = deliveryPartnerRepository.findTopRatedPartners(4.0, 10);
+        stats.put("topPerformingPartners", topPartners.size());
+
+        return stats;
     }
 
-    // Get online partners
-    public List<DeliveryPartner> getOnlinePartners() {
-        return deliveryPartnerRepository.findByIsOnlineAndIsActive(true, true);
+    // Get partners needing verification
+    public List<DeliveryPartner> getPartnersNeedingVerification() {
+        return deliveryPartnerRepository.findPartnersNeedingVerification();
     }
 
-    // Deactivate partner
-    public DeliveryPartner deactivatePartner(String partnerId) {
-        DeliveryPartner partner = getDeliveryPartnerById(partnerId);
-        partner.setIsActive(false);
-        partner.setIsAvailable(false);
-        partner.setIsOnline(false);
-
-        DeliveryPartner updatedPartner = deliveryPartnerRepository.save(partner);
-
-        // Publish event
-        publishPartnerEvent("PARTNER_DEACTIVATED", updatedPartner);
-
-        logger.info("Partner deactivated: {}", partnerId);
-        return updatedPartner;
+    // Get inactive partners
+    public List<DeliveryPartner> getInactivePartners(int daysInactive) {
+        LocalDateTime cutoff = LocalDateTime.now().minusDays(daysInactive);
+        return deliveryPartnerRepository.findInactivePartners(cutoff);
     }
 
-    // Helper method to calculate distance between two points
-    private double calculateDistance(Double lat1, Double lng1, Double lat2, Double lng2) {
-        final int R = 6371; // Radius of the earth in km
-
-        double latDistance = Math.toRadians(lat2 - lat1);
-        double lonDistance = Math.toRadians(lng2 - lng1);
-        double a = Math.sin(latDistance / 2) * Math.sin(latDistance / 2)
-                + Math.cos(Math.toRadians(lat1)) * Math.cos(Math.toRadians(lat2))
-                * Math.sin(lonDistance / 2) * Math.sin(lonDistance / 2);
-        double c = 2 * Math.atan2(Math.sqrt(a), Math.sqrt(1 - a));
-        double distance = R * c; // Distance in km
-
-        return distance;
-    }
-
-    // Helper method to cache partner location
-    private void cachePartnerLocation(String partnerId, Address location) {
-        if (location != null && location.getLatitude() != null && location.getLongitude() != null) {
-            String key = "partner:location:" + partnerId;
-            Map<String, Object> locationData = new HashMap<>();
-            locationData.put("latitude", location.getLatitude());
-            locationData.put("longitude", location.getLongitude());
-            locationData.put("timestamp", LocalDateTime.now());
-
-            redisTemplate.opsForValue().set(key, locationData, locationCacheTtl, TimeUnit.MINUTES);
+    // Update partner rating (called after delivery completion)
+    public void updatePartnerRating(String partnerId, Double newRating) {
+        Optional<DeliveryPartner> partnerOpt = deliveryPartnerRepository.findById(partnerId);
+        if (partnerOpt.isPresent()) {
+            DeliveryPartner partner = partnerOpt.get();
+            
+            // Calculate weighted average rating
+            double currentRating = partner.getRating();
+            int totalDeliveries = partner.getTotalDeliveries();
+            
+            if (totalDeliveries > 0) {
+                double weightedRating = ((currentRating * totalDeliveries) + newRating) / (totalDeliveries + 1);
+                partner.setRating(Math.round(weightedRating * 100.0) / 100.0);
+            } else {
+                partner.setRating(newRating);
+            }
+            
+            deliveryPartnerRepository.save(partner);
         }
     }
 
-    // Helper method to publish partner events
-    private void publishPartnerEvent(String eventType, DeliveryPartner partner) {
-        Map<String, Object> event = new HashMap<>();
-        event.put("eventType", eventType);
-        event.put("partnerId", partner.getPartnerId());
-        event.put("userId", partner.getUserId());
-        event.put("isAvailable", partner.getIsAvailable());
-        event.put("isOnline", partner.getIsOnline());
-        event.put("isActive", partner.getIsActive());
-        event.put("rating", partner.getRating());
-        event.put("timestamp", LocalDateTime.now());
+    // Helper method to calculate distance
+    private double calculateDistance(Double lat1, Double lng1, Double lat2, Double lng2) {
+        if (lat1 == null || lng1 == null || lat2 == null || lng2 == null) {
+            return Double.MAX_VALUE;
+        }
 
-        kafkaTemplate.send("delivery-partner-events", event);
+        // Haversine formula
+        double lat1Rad = Math.toRadians(lat1);
+        double lat2Rad = Math.toRadians(lat2);
+        double deltaLatRad = Math.toRadians(lat2 - lat1);
+        double deltaLngRad = Math.toRadians(lng2 - lng1);
+
+        double a = Math.sin(deltaLatRad / 2) * Math.sin(deltaLatRad / 2) +
+                   Math.cos(lat1Rad) * Math.cos(lat2Rad) *
+                   Math.sin(deltaLngRad / 2) * Math.sin(deltaLngRad / 2);
+        double c = 2 * Math.atan2(Math.sqrt(a), Math.sqrt(1 - a));
+
+        return 6371.0 * c; // Earth's radius in kilometers
+    }
+
+    // Helper method to calculate search bounds
+    private double[] calculateSearchBounds(Double lat, Double lng, Double radiusKm) {
+        double latOffset = radiusKm / 111.0; // Approximate km per degree latitude
+        double lngOffset = radiusKm / (111.0 * Math.cos(Math.toRadians(lat))); // Adjust for longitude
+
+        return new double[] {
+            lat - latOffset,  // minLat
+            lat + latOffset,  // maxLat
+            lng - lngOffset,  // minLng
+            lng + lngOffset   // maxLng
+        };
+    }
+
+    // Publish partner event to Kafka
+    private void publishPartnerEvent(String eventType, DeliveryPartner partner) {
+        try {
+            Map<String, Object> event = new HashMap<>();
+            event.put("eventType", eventType);
+            event.put("partnerId", partner.getPartnerId());
+            event.put("userId", partner.getUserId());
+            event.put("fullName", partner.getFullName());
+            event.put("status", partner.getStatus().name());
+            event.put("isActive", partner.getIsActive());
+            event.put("isVerified", partner.getIsVerified());
+            event.put("timestamp", LocalDateTime.now());
+
+            kafkaTemplate.send("delivery-partner-events", event);
+        } catch (Exception e) {
+            System.err.println("Failed to publish partner event: " + e.getMessage());
+        }
+    }
+
+    // Publish partner status change event
+    private void publishPartnerStatusEvent(DeliveryPartner partner, DeliveryPartnerStatus oldStatus, DeliveryPartnerStatus newStatus) {
+        try {
+            Map<String, Object> event = new HashMap<>();
+            event.put("eventType", "partner.status.changed");
+            event.put("partnerId", partner.getPartnerId());
+            event.put("oldStatus", oldStatus.name());
+            event.put("newStatus", newStatus.name());
+            event.put("timestamp", LocalDateTime.now());
+
+            kafkaTemplate.send("delivery-partner-status-updates", event);
+        } catch (Exception e) {
+            System.err.println("Failed to publish partner status event: " + e.getMessage());
+        }
+    }
+
+    // Publish location update
+    private void publishLocationUpdate(DeliveryPartner partner) {
+        try {
+            Map<String, Object> locationUpdate = new HashMap<>();
+            locationUpdate.put("partnerId", partner.getPartnerId());
+            locationUpdate.put("currentLocation", partner.getCurrentLocation());
+            locationUpdate.put("timestamp", partner.getLastActiveTime());
+
+            kafkaTemplate.send("delivery-partner-location-updates", locationUpdate);
+        } catch (Exception e) {
+            System.err.println("Failed to publish location update: " + e.getMessage());
+        }
     }
 }

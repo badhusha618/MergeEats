@@ -3,7 +3,7 @@ package com.mergeeats.deliveryservice.dto;
 import com.mergeeats.common.models.Address;
 import jakarta.validation.Valid;
 import jakarta.validation.constraints.*;
-import java.util.List;
+import java.time.LocalDateTime;
 
 public class CreateDeliveryRequest {
 
@@ -27,12 +27,15 @@ public class CreateDeliveryRequest {
     @DecimalMin(value = "0.0", message = "Delivery fee cannot be negative")
     private Double deliveryFee;
 
-    @Min(value = 0, message = "Estimated delivery time cannot be negative")
-    private Integer estimatedDeliveryTimeMinutes;
-
-    private List<String> mergedOrderIds; // For merged deliveries
-
     private String specialInstructions;
+
+    private String customerPhoneNumber;
+
+    private String restaurantPhoneNumber;
+
+    private LocalDateTime scheduledPickupTime;
+
+    private LocalDateTime estimatedDeliveryTime;
 
     // Constructors
     public CreateDeliveryRequest() {}
@@ -95,27 +98,43 @@ public class CreateDeliveryRequest {
         this.deliveryFee = deliveryFee;
     }
 
-    public Integer getEstimatedDeliveryTimeMinutes() {
-        return estimatedDeliveryTimeMinutes;
-    }
-
-    public void setEstimatedDeliveryTimeMinutes(Integer estimatedDeliveryTimeMinutes) {
-        this.estimatedDeliveryTimeMinutes = estimatedDeliveryTimeMinutes;
-    }
-
-    public List<String> getMergedOrderIds() {
-        return mergedOrderIds;
-    }
-
-    public void setMergedOrderIds(List<String> mergedOrderIds) {
-        this.mergedOrderIds = mergedOrderIds;
-    }
-
     public String getSpecialInstructions() {
         return specialInstructions;
     }
 
     public void setSpecialInstructions(String specialInstructions) {
         this.specialInstructions = specialInstructions;
+    }
+
+    public String getCustomerPhoneNumber() {
+        return customerPhoneNumber;
+    }
+
+    public void setCustomerPhoneNumber(String customerPhoneNumber) {
+        this.customerPhoneNumber = customerPhoneNumber;
+    }
+
+    public String getRestaurantPhoneNumber() {
+        return restaurantPhoneNumber;
+    }
+
+    public void setRestaurantPhoneNumber(String restaurantPhoneNumber) {
+        this.restaurantPhoneNumber = restaurantPhoneNumber;
+    }
+
+    public LocalDateTime getScheduledPickupTime() {
+        return scheduledPickupTime;
+    }
+
+    public void setScheduledPickupTime(LocalDateTime scheduledPickupTime) {
+        this.scheduledPickupTime = scheduledPickupTime;
+    }
+
+    public LocalDateTime getEstimatedDeliveryTime() {
+        return estimatedDeliveryTime;
+    }
+
+    public void setEstimatedDeliveryTime(LocalDateTime estimatedDeliveryTime) {
+        this.estimatedDeliveryTime = estimatedDeliveryTime;
     }
 }

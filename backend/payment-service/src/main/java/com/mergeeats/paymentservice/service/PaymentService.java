@@ -434,8 +434,8 @@ public class PaymentService {
         event.put("orderId", payment.getOrderId());
         event.put("userId", payment.getUserId());
         event.put("amount", payment.getAmount());
-        event.put("paymentStatus", payment.getPaymentStatus());
-        event.put("paymentMethod", payment.getPaymentMethod());
+        event.put("paymentStatus", payment.getStatus().name());
+        event.put("paymentMethod", payment.getPaymentMethod().name());
         event.put("isGroupPayment", payment.getIsGroupPayment());
         event.put("timestamp", LocalDateTime.now());
 

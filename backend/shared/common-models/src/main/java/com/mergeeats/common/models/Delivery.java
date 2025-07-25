@@ -1,10 +1,12 @@
 package com.mergeeats.common.models;
 
+import com.mergeeats.common.enums.DeliveryStatus;
 import org.springframework.data.annotation.CreatedDate;
 import org.springframework.data.annotation.Id;
 import org.springframework.data.annotation.LastModifiedDate;
 import org.springframework.data.mongodb.core.mapping.Document;
 import org.springframework.data.mongodb.core.index.Indexed;
+
 import jakarta.validation.constraints.*;
 import java.time.LocalDateTime;
 import java.util.List;
@@ -19,15 +21,16 @@ public class Delivery {
     @Indexed
     private String orderId;
 
-    @NotBlank(message = "Delivery partner ID is required")
-    @Indexed
-    private String deliveryPartnerId;
-
     @NotBlank(message = "Customer ID is required")
+    @Indexed
     private String customerId;
 
     @NotBlank(message = "Restaurant ID is required")
+    @Indexed
     private String restaurantId;
+
+    @Indexed
+    private String deliveryPartnerId;
 
     @NotNull(message = "Pickup address is required")
     private Address pickupAddress;
@@ -35,11 +38,14 @@ public class Delivery {
     @NotNull(message = "Delivery address is required")
     private Address deliveryAddress;
 
-    @NotBlank(message = "Status is required")
-    private String status; // ASSIGNED, PICKED_UP, IN_TRANSIT, DELIVERED, CANCELLED
+    @NotNull(message = "Status is required")
+    private DeliveryStatus status = DeliveryStatus.PENDING;
 
     @DecimalMin(value = "0.0", message = "Distance cannot be negative")
     private Double distanceKm;
+
+    @Min(value = 0, message = "Estimated time cannot be negative")
+    private Integer estimatedTimeMinutes;
 
     @DecimalMin(value = "0.0", message = "Delivery fee cannot be negative")
     private Double deliveryFee;
@@ -47,36 +53,46 @@ public class Delivery {
     @DecimalMin(value = "0.0", message = "Partner earnings cannot be negative")
     private Double partnerEarnings;
 
-    private LocalDateTime assignedAt;
-    private LocalDateTime pickedUpAt;
-    private LocalDateTime deliveredAt;
-    private LocalDateTime cancelledAt;
-
-    @Min(value = 0, message = "Estimated time cannot be negative")
-    private Integer estimatedDeliveryTimeMinutes;
-
-    @Min(value = 0, message = "Actual time cannot be negative")
-    private Integer actualDeliveryTimeMinutes;
-
-    private List<String> mergedOrderIds; // For merged deliveries
-
-    private String trackingCode;
-
     private String specialInstructions;
+
+    private String customerPhoneNumber;
+
+    private String restaurantPhoneNumber;
+
+    private LocalDateTime scheduledPickupTime;
+
+    private LocalDateTime actualPickupTime;
+
+    private LocalDateTime estimatedDeliveryTime;
+
+    private LocalDateTime actualDeliveryTime;
+
+    private LocalDateTime assignedAt;
+
+    private LocalDateTime acceptedAt;
+
+    private LocalDateTime pickedUpAt;
+
+    private LocalDateTime deliveredAt;
+
+    private LocalDateTime cancelledAt;
 
     private String cancellationReason;
 
-    // Delivery tracking information
+    // For merged orders
+    private Boolean isMergedDelivery = false;
+    
+    private List<String> mergedOrderIds;
+
+    // Route optimization
+    private List<Address> routeWaypoints;
+    
+    private String optimizedRoute;
+
+    // Real-time tracking
     private Address currentLocation;
+    
     private LocalDateTime lastLocationUpdate;
-    private List<DeliveryTrackingPoint> trackingPoints;
-
-    // Customer feedback
-    @DecimalMin(value = "0.0", message = "Rating cannot be negative")
-    @DecimalMax(value = "5.0", message = "Rating cannot exceed 5.0")
-    private Double customerRating;
-
-    private String customerFeedback;
 
     @CreatedDate
     private LocalDateTime createdAt;
@@ -87,65 +103,13 @@ public class Delivery {
     // Constructors
     public Delivery() {}
 
-    public Delivery(String orderId, String deliveryPartnerId, String customerId, String restaurantId,
+    public Delivery(String orderId, String customerId, String restaurantId, 
                    Address pickupAddress, Address deliveryAddress) {
         this.orderId = orderId;
-        this.deliveryPartnerId = deliveryPartnerId;
         this.customerId = customerId;
         this.restaurantId = restaurantId;
         this.pickupAddress = pickupAddress;
         this.deliveryAddress = deliveryAddress;
-        this.status = "ASSIGNED";
-    }
-
-    // Inner class for tracking points
-    public static class DeliveryTrackingPoint {
-        private Double latitude;
-        private Double longitude;
-        private LocalDateTime timestamp;
-        private String status;
-
-        public DeliveryTrackingPoint() {}
-
-        public DeliveryTrackingPoint(Double latitude, Double longitude, String status) {
-            this.latitude = latitude;
-            this.longitude = longitude;
-            this.status = status;
-            this.timestamp = LocalDateTime.now();
-        }
-
-        // Getters and Setters
-        public Double getLatitude() {
-            return latitude;
-        }
-
-        public void setLatitude(Double latitude) {
-            this.latitude = latitude;
-        }
-
-        public Double getLongitude() {
-            return longitude;
-        }
-
-        public void setLongitude(Double longitude) {
-            this.longitude = longitude;
-        }
-
-        public LocalDateTime getTimestamp() {
-            return timestamp;
-        }
-
-        public void setTimestamp(LocalDateTime timestamp) {
-            this.timestamp = timestamp;
-        }
-
-        public String getStatus() {
-            return status;
-        }
-
-        public void setStatus(String status) {
-            this.status = status;
-        }
     }
 
     // Getters and Setters
@@ -165,14 +129,6 @@ public class Delivery {
         this.orderId = orderId;
     }
 
-    public String getDeliveryPartnerId() {
-        return deliveryPartnerId;
-    }
-
-    public void setDeliveryPartnerId(String deliveryPartnerId) {
-        this.deliveryPartnerId = deliveryPartnerId;
-    }
-
     public String getCustomerId() {
         return customerId;
     }
@@ -187,6 +143,14 @@ public class Delivery {
 
     public void setRestaurantId(String restaurantId) {
         this.restaurantId = restaurantId;
+    }
+
+    public String getDeliveryPartnerId() {
+        return deliveryPartnerId;
+    }
+
+    public void setDeliveryPartnerId(String deliveryPartnerId) {
+        this.deliveryPartnerId = deliveryPartnerId;
     }
 
     public Address getPickupAddress() {
@@ -205,11 +169,11 @@ public class Delivery {
         this.deliveryAddress = deliveryAddress;
     }
 
-    public String getStatus() {
+    public DeliveryStatus getStatus() {
         return status;
     }
 
-    public void setStatus(String status) {
+    public void setStatus(DeliveryStatus status) {
         this.status = status;
     }
 
@@ -219,6 +183,14 @@ public class Delivery {
 
     public void setDistanceKm(Double distanceKm) {
         this.distanceKm = distanceKm;
+    }
+
+    public Integer getEstimatedTimeMinutes() {
+        return estimatedTimeMinutes;
+    }
+
+    public void setEstimatedTimeMinutes(Integer estimatedTimeMinutes) {
+        this.estimatedTimeMinutes = estimatedTimeMinutes;
     }
 
     public Double getDeliveryFee() {
@@ -237,12 +209,76 @@ public class Delivery {
         this.partnerEarnings = partnerEarnings;
     }
 
+    public String getSpecialInstructions() {
+        return specialInstructions;
+    }
+
+    public void setSpecialInstructions(String specialInstructions) {
+        this.specialInstructions = specialInstructions;
+    }
+
+    public String getCustomerPhoneNumber() {
+        return customerPhoneNumber;
+    }
+
+    public void setCustomerPhoneNumber(String customerPhoneNumber) {
+        this.customerPhoneNumber = customerPhoneNumber;
+    }
+
+    public String getRestaurantPhoneNumber() {
+        return restaurantPhoneNumber;
+    }
+
+    public void setRestaurantPhoneNumber(String restaurantPhoneNumber) {
+        this.restaurantPhoneNumber = restaurantPhoneNumber;
+    }
+
+    public LocalDateTime getScheduledPickupTime() {
+        return scheduledPickupTime;
+    }
+
+    public void setScheduledPickupTime(LocalDateTime scheduledPickupTime) {
+        this.scheduledPickupTime = scheduledPickupTime;
+    }
+
+    public LocalDateTime getActualPickupTime() {
+        return actualPickupTime;
+    }
+
+    public void setActualPickupTime(LocalDateTime actualPickupTime) {
+        this.actualPickupTime = actualPickupTime;
+    }
+
+    public LocalDateTime getEstimatedDeliveryTime() {
+        return estimatedDeliveryTime;
+    }
+
+    public void setEstimatedDeliveryTime(LocalDateTime estimatedDeliveryTime) {
+        this.estimatedDeliveryTime = estimatedDeliveryTime;
+    }
+
+    public LocalDateTime getActualDeliveryTime() {
+        return actualDeliveryTime;
+    }
+
+    public void setActualDeliveryTime(LocalDateTime actualDeliveryTime) {
+        this.actualDeliveryTime = actualDeliveryTime;
+    }
+
     public LocalDateTime getAssignedAt() {
         return assignedAt;
     }
 
     public void setAssignedAt(LocalDateTime assignedAt) {
         this.assignedAt = assignedAt;
+    }
+
+    public LocalDateTime getAcceptedAt() {
+        return acceptedAt;
+    }
+
+    public void setAcceptedAt(LocalDateTime acceptedAt) {
+        this.acceptedAt = acceptedAt;
     }
 
     public LocalDateTime getPickedUpAt() {
@@ -269,20 +305,20 @@ public class Delivery {
         this.cancelledAt = cancelledAt;
     }
 
-    public Integer getEstimatedDeliveryTimeMinutes() {
-        return estimatedDeliveryTimeMinutes;
+    public String getCancellationReason() {
+        return cancellationReason;
     }
 
-    public void setEstimatedDeliveryTimeMinutes(Integer estimatedDeliveryTimeMinutes) {
-        this.estimatedDeliveryTimeMinutes = estimatedDeliveryTimeMinutes;
+    public void setCancellationReason(String cancellationReason) {
+        this.cancellationReason = cancellationReason;
     }
 
-    public Integer getActualDeliveryTimeMinutes() {
-        return actualDeliveryTimeMinutes;
+    public Boolean getIsMergedDelivery() {
+        return isMergedDelivery;
     }
 
-    public void setActualDeliveryTimeMinutes(Integer actualDeliveryTimeMinutes) {
-        this.actualDeliveryTimeMinutes = actualDeliveryTimeMinutes;
+    public void setIsMergedDelivery(Boolean isMergedDelivery) {
+        this.isMergedDelivery = isMergedDelivery;
     }
 
     public List<String> getMergedOrderIds() {
@@ -293,28 +329,20 @@ public class Delivery {
         this.mergedOrderIds = mergedOrderIds;
     }
 
-    public String getTrackingCode() {
-        return trackingCode;
+    public List<Address> getRouteWaypoints() {
+        return routeWaypoints;
     }
 
-    public void setTrackingCode(String trackingCode) {
-        this.trackingCode = trackingCode;
+    public void setRouteWaypoints(List<Address> routeWaypoints) {
+        this.routeWaypoints = routeWaypoints;
     }
 
-    public String getSpecialInstructions() {
-        return specialInstructions;
+    public String getOptimizedRoute() {
+        return optimizedRoute;
     }
 
-    public void setSpecialInstructions(String specialInstructions) {
-        this.specialInstructions = specialInstructions;
-    }
-
-    public String getCancellationReason() {
-        return cancellationReason;
-    }
-
-    public void setCancellationReason(String cancellationReason) {
-        this.cancellationReason = cancellationReason;
+    public void setOptimizedRoute(String optimizedRoute) {
+        this.optimizedRoute = optimizedRoute;
     }
 
     public Address getCurrentLocation() {
@@ -331,30 +359,6 @@ public class Delivery {
 
     public void setLastLocationUpdate(LocalDateTime lastLocationUpdate) {
         this.lastLocationUpdate = lastLocationUpdate;
-    }
-
-    public List<DeliveryTrackingPoint> getTrackingPoints() {
-        return trackingPoints;
-    }
-
-    public void setTrackingPoints(List<DeliveryTrackingPoint> trackingPoints) {
-        this.trackingPoints = trackingPoints;
-    }
-
-    public Double getCustomerRating() {
-        return customerRating;
-    }
-
-    public void setCustomerRating(Double customerRating) {
-        this.customerRating = customerRating;
-    }
-
-    public String getCustomerFeedback() {
-        return customerFeedback;
-    }
-
-    public void setCustomerFeedback(String customerFeedback) {
-        this.customerFeedback = customerFeedback;
     }
 
     public LocalDateTime getCreatedAt() {
