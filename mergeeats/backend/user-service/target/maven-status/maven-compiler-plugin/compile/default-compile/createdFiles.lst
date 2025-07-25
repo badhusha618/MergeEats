@@ -1,9 +1,0 @@
-com/mergeeats/userservice/dto/LoginRequest.class
-com/mergeeats/userservice/UserServiceApplication.class
-com/mergeeats/userservice/controller/UserController.class
-com/mergeeats/userservice/dto/AuthResponse.class
-com/mergeeats/userservice/config/SecurityConfig.class
-com/mergeeats/userservice/repository/UserRepository.class
-com/mergeeats/userservice/service/UserService.class
-com/mergeeats/userservice/dto/UserRegistrationRequest.class
-com/mergeeats/userservice/security/JwtUtil.class
