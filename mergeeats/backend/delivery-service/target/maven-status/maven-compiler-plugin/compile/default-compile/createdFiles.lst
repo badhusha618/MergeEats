@@ -1,0 +1,10 @@
+com/mergeeats/deliveryservice/dto/RegisterDeliveryPartnerRequest.class
+com/mergeeats/deliveryservice/service/DeliveryService.class
+com/mergeeats/deliveryservice/service/DeliveryService$1.class
+com/mergeeats/deliveryservice/dto/UpdateLocationRequest.class
+com/mergeeats/deliveryservice/DeliveryServiceApplication.class
+com/mergeeats/deliveryservice/dto/LocationUpdateRequest.class
+com/mergeeats/deliveryservice/controller/DeliveryController.class
+com/mergeeats/deliveryservice/repository/DeliveryRepository.class
+com/mergeeats/deliveryservice/dto/AssignDeliveryRequest.class
+com/mergeeats/deliveryservice/dto/CreateDeliveryRequest.class

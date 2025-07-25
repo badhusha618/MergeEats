@@ -138,12 +138,18 @@ public class DeliveryPartnerController {
             @Parameter(description = "Partner ID", required = true) @PathVariable String partnerId,
             @Valid @RequestBody UpdateLocationRequest locationRequest) {
         try {
-            // Create Address with coordinates only
-            Address location = new Address();
-            location.setLatitude(locationRequest.getLatitude());
-            location.setLongitude(locationRequest.getLongitude());
+            // Convert request to Address
+            Address address = new Address();
+            address.setLatitude(locationRequest.getLatitude());
+            address.setLongitude(locationRequest.getLongitude());
+            address.setStreet(locationRequest.getStreet());
+            address.setCity(locationRequest.getCity());
+            address.setState(locationRequest.getState());
+            address.setPostalCode(locationRequest.getPostalCode());
+            address.setCountry(locationRequest.getCountry());
+            address.setLandmark(locationRequest.getLandmark());
 
-            DeliveryPartner partner = deliveryPartnerService.updateLocation(partnerId, location);
+            DeliveryPartner partner = deliveryPartnerService.updateLocation(partnerId, address);
             return ResponseEntity.ok(partner);
         } catch (RuntimeException e) {
             return ResponseEntity.badRequest().body(new ErrorResponse("Location update failed", e.getMessage()));

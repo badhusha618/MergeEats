@@ -1,0 +1,10 @@
+    <modules>
+        <module>backend/shared/common-models</module>
+        <module>backend/api-gateway</module>
+        <module>backend/user-service</module>
+        <module>backend/order-service</module>
+        <module>backend/restaurant-service</module>
+        <module>backend/delivery-service</module>
+        <module>backend/payment-service</module>
+        <module>backend/notification-service</module>
+    </modules>

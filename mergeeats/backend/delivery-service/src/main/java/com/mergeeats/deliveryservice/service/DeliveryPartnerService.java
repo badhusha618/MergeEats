@@ -466,8 +466,8 @@ public class DeliveryPartnerService {
             var event = new Object() {
                 public final String partnerId = partner.getPartnerId();
                 public final String userId = partner.getUserId();
-                public final AvailabilityStatus previousStatus = oldStatus;
-                public final AvailabilityStatus currentStatus = newStatus;
+                public final AvailabilityStatus oldStatus = oldStatus;
+                public final AvailabilityStatus newStatus = newStatus;
                 public final LocalDateTime timestamp = LocalDateTime.now();
             };
             kafkaTemplate.send("delivery-partner-status-updates", "status-changed", event);
@@ -494,7 +494,7 @@ public class DeliveryPartnerService {
         try {
             var event = new Object() {
                 public final String partnerId = partner.getPartnerId();
-                public final String assignedOrderId = orderId;
+                public final String orderId = orderId;
                 public final String userId = partner.getUserId();
                 public final LocalDateTime timestamp = LocalDateTime.now();
             };
@@ -508,7 +508,7 @@ public class DeliveryPartnerService {
         try {
             var event = new Object() {
                 public final String partnerId = partner.getPartnerId();
-                public final String completedOrderId = orderId;
+                public final String orderId = orderId;
                 public final String userId = partner.getUserId();
                 public final LocalDateTime timestamp = LocalDateTime.now();
             };
@@ -522,9 +522,9 @@ public class DeliveryPartnerService {
         try {
             var event = new Object() {
                 public final String partnerId = partner.getPartnerId();
-                public final String cancelledOrderId = orderId;
+                public final String orderId = orderId;
                 public final String userId = partner.getUserId();
-                public final String cancellationReason = reason;
+                public final String reason = reason;
                 public final LocalDateTime timestamp = LocalDateTime.now();
             };
             kafkaTemplate.send("delivery-cancellation-events", "order-cancelled", event);
@@ -538,7 +538,7 @@ public class DeliveryPartnerService {
             var event = new Object() {
                 public final String partnerId = partner.getPartnerId();
                 public final String userId = partner.getUserId();
-                public final double updatedRating = newRating;
+                public final double newRating = newRating;
                 public final double currentRating = partner.getRating();
                 public final LocalDateTime timestamp = LocalDateTime.now();
             };
@@ -553,7 +553,7 @@ public class DeliveryPartnerService {
             var event = new Object() {
                 public final String partnerId = partner.getPartnerId();
                 public final String userId = partner.getUserId();
-                public final String deactivationReason = reason;
+                public final String reason = reason;
                 public final LocalDateTime timestamp = LocalDateTime.now();
             };
             kafkaTemplate.send("delivery-partner-events", "partner-deactivated", event);
