@@ -13,10 +13,10 @@
     </parent>
 
     <groupId>com.mergeeats</groupId>
-    <artifactId>restaurant-service</artifactId>
+    <artifactId>user-service</artifactId>
     <version>1.0.0</version>
     <packaging>jar</packaging>
-    <name>MergeEats Restaurant Service</name>
+    <name>MergeEats User Service</name>
 
     <dependencies>
         <!-- Common Models -->
@@ -110,7 +110,7 @@
             <plugin>
                 <groupId>org.springframework.boot</groupId>
                 <artifactId>spring-boot-maven-plugin</artifactId>
-            <configuration><mainClass>com.mergeeats.restaurantservice.RestaurantServiceApplication</mainClass></configuration></plugin>
+            </plugin>
         </plugins>
     </build>
 </project>
