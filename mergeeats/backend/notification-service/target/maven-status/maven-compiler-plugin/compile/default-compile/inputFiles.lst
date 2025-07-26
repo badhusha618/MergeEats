@@ -1,0 +1,5 @@
+/workspace/mergeeats/backend/notification-service/src/main/java/com/mergeeats/notificationservice/repository/NotificationRepository.java
+/workspace/mergeeats/backend/notification-service/src/main/java/com/mergeeats/notificationservice/dto/CreateNotificationRequest.java
+/workspace/mergeeats/backend/notification-service/src/main/java/com/mergeeats/notificationservice/service/NotificationService.java
+/workspace/mergeeats/backend/notification-service/src/main/java/com/mergeeats/notificationservice/controller/NotificationController.java
+/workspace/mergeeats/backend/notification-service/src/main/java/com/mergeeats/notificationservice/NotificationServiceApplication.java
