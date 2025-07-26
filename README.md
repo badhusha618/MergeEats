@@ -394,4 +394,4 @@ For support and questions:
 
 ---
 
-**Made with ❤️ by the MergeEats Team**
+**Made with ❤️ by the Shahul Hameed Badhusha**
