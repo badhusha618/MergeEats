@@ -14,6 +14,7 @@ com/mergeeats/common/models/DeliveryUpdate.class
 com/mergeeats/common/enums/VehicleType.class
 com/mergeeats/common/models/Address.class
 com/mergeeats/common/enums/DeliveryStatus.class
+com/mergeeats/common/enums/PaymentType.class
 com/mergeeats/common/enums/NotificationType.class
 com/mergeeats/common/models/Order.class
 com/mergeeats/common/enums/NotificationChannel.class

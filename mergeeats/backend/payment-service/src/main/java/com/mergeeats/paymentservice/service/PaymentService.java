@@ -1,8 +1,6 @@
 package com.mergeeats.paymentservice.service;
 
 import com.mergeeats.common.models.Payment;
-import com.mergeeats.common.models.Payment.PaymentMethod;
-import com.mergeeats.common.models.Payment.PaymentType;
 import com.mergeeats.common.enums.PaymentStatus;
 import com.mergeeats.paymentservice.repository.PaymentRepository;
 import org.slf4j.Logger;

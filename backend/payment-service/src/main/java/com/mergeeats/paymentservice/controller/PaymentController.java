@@ -2,6 +2,7 @@ package com.mergeeats.paymentservice.controller;
 
 import com.mergeeats.common.models.Payment;
 import com.mergeeats.common.enums.PaymentMethod;
+import com.mergeeats.common.enums.PaymentType;
 import com.mergeeats.common.enums.PaymentStatus;
 import com.mergeeats.paymentservice.service.PaymentService;
 import com.mergeeats.paymentservice.dto.CreatePaymentRequest;

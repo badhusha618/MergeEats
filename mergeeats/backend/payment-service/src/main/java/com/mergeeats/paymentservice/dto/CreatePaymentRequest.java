@@ -1,7 +1,5 @@
 package com.mergeeats.paymentservice.dto;
 
-import com.mergeeats.common.models.Payment.PaymentMethod;
-import com.mergeeats.common.models.Payment.PaymentType;
 import jakarta.validation.constraints.*;
 import java.util.Map;
 
