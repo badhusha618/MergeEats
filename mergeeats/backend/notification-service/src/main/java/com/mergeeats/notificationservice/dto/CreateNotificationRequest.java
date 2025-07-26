@@ -2,27 +2,27 @@ package com.mergeeats.notificationservice.dto;
 
 import com.mergeeats.common.enums.NotificationType;
 import com.mergeeats.common.enums.NotificationChannel;
+import io.swagger.v3.oas.annotations.media.Schema;
 import jakarta.validation.constraints.*;
 import java.time.LocalDateTime;
 import java.util.Map;
 
 public class CreateNotificationRequest {
 
-    @NotBlank(message = "User ID is required")
-    private String userId;
+    @Schema(example = "user_987654321")
+    @NotBlank(message = "Recipient ID is required")
+    private String recipientId;
 
-    @NotNull(message = "Notification type is required")
-    private NotificationType type;
+    @Schema(example = "ORDER_STATUS_UPDATE")
+    @NotBlank(message = "Notification type is required")
+    private String type;
 
-    @NotNull(message = "Notification channel is required")
-    private NotificationChannel channel;
-
+    @Schema(example = "Your order #12345 has been confirmed and is being prepared!")
     @NotBlank(message = "Title is required")
-    @Size(max = 200, message = "Title cannot exceed 200 characters")
     private String title;
 
+    @Schema(example = "Your order from Pizza Palace is being prepared and will be ready for delivery soon.")
     @NotBlank(message = "Message is required")
-    @Size(max = 1000, message = "Message cannot exceed 1000 characters")
     private String message;
 
     // Related entity information
@@ -31,8 +31,8 @@ public class CreateNotificationRequest {
     private String restaurantId;
     private String paymentId;
 
-    // Notification metadata
-    private Map<String, Object> metadata;
+    @Schema(example = "{\"orderId\":\"order_123\",\"status\":\"PREPARING\"}")
+    private String metadata;
 
     // Template information
     private String templateId;

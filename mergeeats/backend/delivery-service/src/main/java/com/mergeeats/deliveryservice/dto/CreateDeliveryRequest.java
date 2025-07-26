@@ -1,28 +1,48 @@
 package com.mergeeats.deliveryservice.dto;
 
 import com.mergeeats.common.models.Address;
+import io.swagger.v3.oas.annotations.media.Schema;
 import jakarta.validation.Valid;
 import jakarta.validation.constraints.*;
 import java.time.LocalDateTime;
 
 public class CreateDeliveryRequest {
 
+    @Schema(example = "order_123456789")
     @NotBlank(message = "Order ID is required")
     private String orderId;
 
+    @Schema(example = "user_987654321")
     @NotBlank(message = "Customer ID is required")
     private String customerId;
 
+    @Schema(example = "restaurant_123456789")
     @NotBlank(message = "Restaurant ID is required")
     private String restaurantId;
 
-    @NotNull(message = "Pickup address is required")
-    @Valid
-    private Address pickupAddress;
+    @Schema(example = "123 Main St, City, State 12345")
+    @NotBlank(message = "Pickup address is required")
+    private String pickupAddress;
 
-    @NotNull(message = "Delivery address is required")
-    @Valid
-    private Address deliveryAddress;
+    @Schema(example = "456 Oak Ave, City, State 12345")
+    @NotBlank(message = "Delivery address is required")
+    private String deliveryAddress;
+
+    @Schema(example = "40.7128")
+    @NotNull(message = "Pickup latitude is required")
+    private Double pickupLatitude;
+
+    @Schema(example = "-74.0060")
+    @NotNull(message = "Pickup longitude is required")
+    private Double pickupLongitude;
+
+    @Schema(example = "40.7589")
+    @NotNull(message = "Delivery latitude is required")
+    private Double deliveryLatitude;
+
+    @Schema(example = "-73.9851")
+    @NotNull(message = "Delivery longitude is required")
+    private Double deliveryLongitude;
 
     @NotNull(message = "Order total is required")
     @DecimalMin(value = "0.0", message = "Order total cannot be negative")

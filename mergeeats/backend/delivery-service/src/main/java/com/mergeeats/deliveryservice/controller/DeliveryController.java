@@ -10,6 +10,9 @@ import com.mergeeats.deliveryservice.dto.AssignDeliveryRequest;
 import io.swagger.v3.oas.annotations.Operation;
 import io.swagger.v3.oas.annotations.Parameter;
 import io.swagger.v3.oas.annotations.tags.Tag;
+import io.swagger.v3.oas.annotations.media.Content;
+import io.swagger.v3.oas.annotations.media.ExampleObject;
+import io.swagger.v3.oas.annotations.media.Schema;
 import io.swagger.v3.oas.annotations.responses.ApiResponse;
 import io.swagger.v3.oas.annotations.responses.ApiResponses;
 
@@ -27,21 +30,113 @@ import java.util.Optional;
 
 @RestController
 @RequestMapping("/deliveries")
-@Tag(name = "Delivery Management", description = "APIs for managing deliveries, tracking, and assignments")
+@Tag(name = "Delivery Management", 
+     description = "**Comprehensive Delivery Management APIs**\n\n" +
+                  "This controller provides all delivery-related operations including:\n" +
+                  "- Delivery creation and assignment\n" +
+                  "- Real-time location tracking\n" +
+                  "- Delivery status management\n" +
+                  "- Partner assignment and management\n" +
+                  "- Delivery analytics and statistics")
 public class DeliveryController {
 
     @Autowired
     private DeliveryService deliveryService;
 
     @PostMapping
-    @Operation(summary = "Create new delivery", description = "Creates a new delivery for an order")
+    @Operation(
+        summary = "Create new delivery",
+        description = "**Creates a new delivery for an order**\n\n" +
+                     "This endpoint handles delivery creation with:\n" +
+                     "- Order and customer information\n" +
+                     "- Pickup and delivery locations\n" +
+                     "- Scheduling and timing\n" +
+                     "- Special instructions",
+        tags = {"Delivery Creation"}
+    )
     @ApiResponses(value = {
-        @ApiResponse(responseCode = "201", description = "Delivery created successfully"),
-        @ApiResponse(responseCode = "400", description = "Invalid request data"),
-        @ApiResponse(responseCode = "500", description = "Internal server error")
+        @ApiResponse(
+            responseCode = "201",
+            description = "Delivery created successfully",
+            content = @Content(
+                mediaType = "application/json",
+                schema = @Schema(implementation = Delivery.class),
+                examples = @ExampleObject(
+                    name = "Successful Delivery Creation",
+                    value = """
+                        {
+                          "id": "delivery_123456789",
+                          "orderId": "order_123456789",
+                          "customerId": "user_987654321",
+                          "restaurantId": "restaurant_123456789",
+                          "deliveryPartnerId": null,
+                          "pickupAddress": "123 Main St, City, State 12345",
+                          "deliveryAddress": "456 Oak Ave, City, State 12345",
+                          "pickupLatitude": 40.7128,
+                          "pickupLongitude": -74.0060,
+                          "deliveryLatitude": 40.7589,
+                          "deliveryLongitude": -73.9851,
+                          "status": "PENDING",
+                          "orderTotal": 29.99,
+                          "deliveryFee": 2.99,
+                          "scheduledPickupTime": "2024-01-15T11:30:00Z",
+                          "estimatedDeliveryTime": "2024-01-15T12:30:00Z",
+                          "createdAt": "2024-01-15T11:00:00Z"
+                        }
+                        """
+                )
+            )
+        ),
+        @ApiResponse(
+            responseCode = "400",
+            description = "Invalid delivery data",
+            content = @Content(
+                mediaType = "application/json",
+                examples = @ExampleObject(
+                    name = "Validation Error",
+                    value = """
+                        {
+                          "message": "Validation failed",
+                          "errors": [
+                            "Order ID is required",
+                            "Customer ID is required",
+                            "Pickup address is required"
+                          ]
+                        }
+                        """
+                )
+            )
+        )
     })
     public ResponseEntity<Delivery> createDelivery(
-            @Valid @RequestBody CreateDeliveryRequest request) {
+        @Parameter(
+            description = "Delivery creation data",
+            required = true,
+            content = @Content(
+                examples = @ExampleObject(
+                    name = "Delivery Creation",
+                    value = """
+                        {
+                          "orderId": "order_123456789",
+                          "customerId": "user_987654321",
+                          "restaurantId": "restaurant_123456789",
+                          "pickupAddress": "123 Main St, City, State 12345",
+                          "deliveryAddress": "456 Oak Ave, City, State 12345",
+                          "pickupLatitude": 40.7128,
+                          "pickupLongitude": -74.0060,
+                          "deliveryLatitude": 40.7589,
+                          "deliveryLongitude": -73.9851,
+                          "orderTotal": 29.99,
+                          "deliveryFee": 2.99,
+                          "scheduledPickupTime": "2024-01-15T11:30:00Z",
+                          "estimatedDeliveryTime": "2024-01-15T12:30:00Z",
+                          "deliveryInstructions": "Please deliver to the front door"
+                        }
+                        """
+                )
+            )
+        )
+        @Valid @RequestBody CreateDeliveryRequest request) {
         try {
             Delivery delivery = deliveryService.createDelivery(request);
             return new ResponseEntity<>(delivery, HttpStatus.CREATED);
@@ -51,13 +146,44 @@ public class DeliveryController {
     }
 
     @GetMapping("/{deliveryId}")
-    @Operation(summary = "Get delivery by ID", description = "Retrieves a delivery by its unique identifier")
+    @Operation(
+        summary = "Get delivery by ID",
+        description = "**Retrieves detailed delivery information by ID**\n\n" +
+                     "Returns comprehensive delivery data including:\n" +
+                     "- Delivery details and status\n" +
+                     "- Location information\n" +
+                     "- Partner assignment\n" +
+                     "- Timing and scheduling",
+        tags = {"Delivery Information"}
+    )
     @ApiResponses(value = {
-        @ApiResponse(responseCode = "200", description = "Delivery found"),
-        @ApiResponse(responseCode = "404", description = "Delivery not found")
+        @ApiResponse(
+            responseCode = "200",
+            description = "Delivery found",
+            content = @Content(
+                mediaType = "application/json",
+                schema = @Schema(implementation = Delivery.class)
+            )
+        ),
+        @ApiResponse(
+            responseCode = "404",
+            description = "Delivery not found",
+            content = @Content(
+                mediaType = "application/json",
+                examples = @ExampleObject(
+                    value = """
+                        {
+                          "message": "Delivery not found",
+                          "errors": ["Delivery with ID delivery_123456789 does not exist"]
+                        }
+                        """
+                )
+            )
+        )
     })
     public ResponseEntity<Delivery> getDeliveryById(
-            @Parameter(description = "Delivery ID") @PathVariable String deliveryId) {
+        @Parameter(example = "delivery_123456789", description = "Unique delivery identifier")
+        @PathVariable String deliveryId) {
         Optional<Delivery> delivery = deliveryService.getDeliveryById(deliveryId);
         return delivery.map(d -> ResponseEntity.ok(d))
                       .orElse(ResponseEntity.notFound().build());

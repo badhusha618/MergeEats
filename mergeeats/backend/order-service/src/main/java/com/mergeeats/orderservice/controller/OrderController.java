@@ -6,6 +6,12 @@ import com.mergeeats.orderservice.dto.CreateOrderRequest;
 import com.mergeeats.orderservice.service.OrderService;
 import io.swagger.v3.oas.annotations.Operation;
 import io.swagger.v3.oas.annotations.tags.Tag;
+import io.swagger.v3.oas.annotations.Parameter;
+import io.swagger.v3.oas.annotations.media.Content;
+import io.swagger.v3.oas.annotations.media.ExampleObject;
+import io.swagger.v3.oas.annotations.media.Schema;
+import io.swagger.v3.oas.annotations.responses.ApiResponse;
+import io.swagger.v3.oas.annotations.responses.ApiResponses;
 import jakarta.validation.Valid;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.format.annotation.DateTimeFormat;
@@ -19,15 +25,115 @@ import java.util.Map;
 
 @RestController
 @RequestMapping("/")
-@Tag(name = "Order Management", description = "APIs for order creation, management, and AI-powered merging")
+@Tag(name = "Order Management", 
+     description = "**Comprehensive Order Management APIs**\n\n" +
+                  "This controller provides all order-related operations including:\n" +
+                  "- Order creation and management\n" +
+                  "- AI-powered order merging\n" +
+                  "- Order status tracking\n" +
+                  "- Group order functionality\n" +
+                  "- Order statistics and analytics")
 public class OrderController {
     
     @Autowired
     private OrderService orderService;
     
     @PostMapping
-    @Operation(summary = "Create a new order", description = "Creates a new order and triggers AI-powered merging if enabled")
-    public ResponseEntity<Order> createOrder(@Valid @RequestBody CreateOrderRequest request) {
+    @Operation(
+        summary = "Create a new order",
+        description = "**Creates a new order and triggers AI-powered merging if enabled**\n\n" +
+                     "This endpoint handles order creation with advanced features:\n" +
+                     "- Multi-restaurant order support\n" +
+                     "- AI-powered order merging for efficiency\n" +
+                     "- Real-time order tracking\n" +
+                     "- Payment integration\n" +
+                     "- Delivery coordination",
+        tags = {"Order Creation"}
+    )
+    @ApiResponses(value = {
+        @ApiResponse(
+            responseCode = "201",
+            description = "Order created successfully",
+            content = @Content(
+                mediaType = "application/json",
+                schema = @Schema(implementation = Order.class),
+                examples = @ExampleObject(
+                    name = "Successful Order Creation",
+                    value = """
+                        {
+                          "id": "order_123456789",
+                          "userId": "user_987654321",
+                          "restaurantId": "restaurant_123456789",
+                          "items": [
+                            {
+                              "menuItemId": "item_123",
+                              "name": "Margherita Pizza",
+                              "quantity": 2,
+                              "price": 12.99,
+                              "specialInstructions": "Extra cheese please"
+                            }
+                          ],
+                          "status": "PENDING",
+                          "totalAmount": 25.98,
+                          "deliveryFee": 2.99,
+                          "tax": 2.60,
+                          "grandTotal": 31.57,
+                          "deliveryAddress": "123 Main St, City, State 12345",
+                          "estimatedDeliveryTime": "2024-01-15T12:30:00Z",
+                          "createdAt": "2024-01-15T11:00:00Z"
+                        }
+                        """
+                )
+            )
+        ),
+        @ApiResponse(
+            responseCode = "400",
+            description = "Invalid order data",
+            content = @Content(
+                mediaType = "application/json",
+                examples = @ExampleObject(
+                    name = "Validation Error",
+                    value = """
+                        {
+                          "message": "Validation failed",
+                          "errors": [
+                            "User ID is required",
+                            "Restaurant ID is required",
+                            "Order items are required"
+                          ]
+                        }
+                        """
+                )
+            )
+        )
+    })
+    public ResponseEntity<Order> createOrder(
+        @Parameter(
+            description = "Order creation data",
+            required = true,
+            content = @Content(
+                examples = @ExampleObject(
+                    name = "Order Creation",
+                    value = """
+                        {
+                          "userId": "user_987654321",
+                          "restaurantId": "restaurant_123456789",
+                          "deliveryAddress": "123 Main St, City, State 12345",
+                          "specialInstructions": "Please deliver to the front door",
+                          "paymentMethod": "CREDIT_CARD",
+                          "items": [
+                            {
+                              "menuItemId": "item_123",
+                              "quantity": 2,
+                              "specialInstructions": "Extra cheese please"
+                            }
+                          ]
+                        }
+                        """
+                )
+            )
+        )
+        @Valid @RequestBody CreateOrderRequest request) {
         try {
             Order order = orderService.createOrder(request);
             return ResponseEntity.status(HttpStatus.CREATED).body(order);
@@ -37,8 +143,44 @@ public class OrderController {
     }
     
     @GetMapping("/{orderId}")
-    @Operation(summary = "Get order by ID", description = "Retrieves order details by order ID")
-    public ResponseEntity<Order> getOrderById(@PathVariable String orderId) {
+    @Operation(
+        summary = "Get order by ID",
+        description = "**Retrieves detailed order information by ID**\n\n" +
+                     "Returns comprehensive order data including:\n" +
+                     "- Order items and quantities\n" +
+                     "- Current status and tracking\n" +
+                     "- Payment and delivery information\n" +
+                     "- Timestamps and history",
+        tags = {"Order Information"}
+    )
+    @ApiResponses(value = {
+        @ApiResponse(
+            responseCode = "200",
+            description = "Order found",
+            content = @Content(
+                mediaType = "application/json",
+                schema = @Schema(implementation = Order.class)
+            )
+        ),
+        @ApiResponse(
+            responseCode = "404",
+            description = "Order not found",
+            content = @Content(
+                mediaType = "application/json",
+                examples = @ExampleObject(
+                    value = """
+                        {
+                          "message": "Order not found",
+                          "errors": ["Order with ID order_123456789 does not exist"]
+                        }
+                        """
+                )
+            )
+        )
+    })
+    public ResponseEntity<Order> getOrderById(
+        @Parameter(example = "order_123456789", description = "Unique order identifier")
+        @PathVariable String orderId) {
         try {
             Order order = orderService.getOrderById(orderId);
             return ResponseEntity.ok(order);

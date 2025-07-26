@@ -1,12 +1,19 @@
 package com.mergeeats.userservice.dto;
 
 import com.mergeeats.common.models.User;
+import io.swagger.v3.oas.annotations.media.Schema;
 
 public class AuthResponse {
     
+    @Schema(example = "eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJzdWIiOiIxMjM0NTY3ODkwIiwibmFtZSI6IkphbmUgRG9lIiwiaWF0IjoxNTE2MjM5MDIyfQ.SflKxwRJSMeKKF2QT4fwpMeJf36POk6yJV_adQssw5c")
     private String token;
+    
+    @Schema(example = "Bearer")
     private String tokenType = "Bearer";
+    
     private User user;
+    
+    @Schema(example = "Login successful")
     private String message;
     
     // Constructors
