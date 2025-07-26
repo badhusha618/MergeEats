@@ -80,6 +80,8 @@ public class Notification {
     private LocalDateTime nextRetryAt;
 
     private String failureReason;
+    
+    private LocalDateTime failedAt;
 
     // Tracking
     private Boolean isRead = false;
@@ -339,6 +341,14 @@ public class Notification {
 
     public void setFailureReason(String failureReason) {
         this.failureReason = failureReason;
+    }
+
+    public LocalDateTime getFailedAt() {
+        return failedAt;
+    }
+
+    public void setFailedAt(LocalDateTime failedAt) {
+        this.failedAt = failedAt;
     }
 
     public Boolean getIsRead() {

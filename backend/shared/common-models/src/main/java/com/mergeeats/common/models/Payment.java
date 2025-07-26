@@ -96,6 +96,8 @@ public class Payment {
     private String groupOrderId;
 
     private Double userShareAmount;
+    
+    private Map<String, Double> splitDetails; // userId -> amount
 
     // Receipt and invoice
     private String receiptUrl;
@@ -369,6 +371,14 @@ public class Payment {
 
     public void setUserShareAmount(Double userShareAmount) {
         this.userShareAmount = userShareAmount;
+    }
+
+    public Map<String, Double> getSplitDetails() {
+        return splitDetails;
+    }
+
+    public void setSplitDetails(Map<String, Double> splitDetails) {
+        this.splitDetails = splitDetails;
     }
 
     public String getReceiptUrl() {
