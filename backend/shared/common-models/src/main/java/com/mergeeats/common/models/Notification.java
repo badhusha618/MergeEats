@@ -43,6 +43,7 @@ public class Notification {
     private String orderId;
     private String restaurantId;
     private String deliveryPartnerId;
+    private String deliveryId;
     private String paymentId;
 
     // Delivery tracking
@@ -53,6 +54,14 @@ public class Notification {
 
     // Channel-specific data
     private Map<String, Object> channelData;
+    
+    // Template information
+    private String templateId;
+    private Map<String, String> templateVariables;
+    private Map<String, Object> metadata;
+    
+    // Recipient information
+    private String recipientEmail;
 
     // Email specific
     private String emailSubject;
@@ -397,6 +406,46 @@ public class Notification {
 
     public void setUpdatedAt(LocalDateTime updatedAt) {
         this.updatedAt = updatedAt;
+    }
+
+    public String getDeliveryId() {
+        return deliveryId;
+    }
+
+    public void setDeliveryId(String deliveryId) {
+        this.deliveryId = deliveryId;
+    }
+
+    public String getTemplateId() {
+        return templateId;
+    }
+
+    public void setTemplateId(String templateId) {
+        this.templateId = templateId;
+    }
+
+    public Map<String, String> getTemplateVariables() {
+        return templateVariables;
+    }
+
+    public void setTemplateVariables(Map<String, String> templateVariables) {
+        this.templateVariables = templateVariables;
+    }
+
+    public Map<String, Object> getMetadata() {
+        return metadata;
+    }
+
+    public void setMetadata(Map<String, Object> metadata) {
+        this.metadata = metadata;
+    }
+
+    public String getRecipientEmail() {
+        return recipientEmail;
+    }
+
+    public void setRecipientEmail(String recipientEmail) {
+        this.recipientEmail = recipientEmail;
     }
 
     // Helper methods
