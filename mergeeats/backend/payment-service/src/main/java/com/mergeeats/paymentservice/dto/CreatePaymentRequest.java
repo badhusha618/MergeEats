@@ -1,9 +1,6 @@
 package com.mergeeats.paymentservice.dto;
 
-import com.mergeeats.common.models.Payment.PaymentMethod;
-import com.mergeeats.common.models.Payment.PaymentType;
 import jakarta.validation.constraints.*;
-import java.util.Map;
 
 public class CreatePaymentRequest {
 
@@ -17,31 +14,16 @@ public class CreatePaymentRequest {
     @DecimalMin(value = "0.01", message = "Amount must be greater than 0")
     private Double amount;
 
-    @NotNull(message = "Payment method is required")
-    private PaymentMethod paymentMethod;
+    @NotBlank(message = "Payment method is required")
+    private String paymentMethod;
 
-    @NotNull(message = "Payment type is required")
-    private PaymentType paymentType;
-
-    @NotBlank(message = "Currency is required")
-    @Size(min = 3, max = 3, message = "Currency must be 3 characters")
-    private String currency = "INR";
-
-    @Size(max = 500, message = "Description cannot exceed 500 characters")
-    private String description;
-
-    // Split payment details
-    private Boolean isSplitPayment = false;
-
-    private String groupOrderId;
-
-    private Map<String, Double> splitDetails; // userId -> amount
+    @NotBlank(message = "Payment type is required")
+    private String paymentType;
 
     // Constructors
     public CreatePaymentRequest() {}
 
-    public CreatePaymentRequest(String orderId, String userId, Double amount, 
-                              PaymentMethod paymentMethod, PaymentType paymentType) {
+    public CreatePaymentRequest(String orderId, String userId, Double amount, String paymentMethod, String paymentType) {
         this.orderId = orderId;
         this.userId = userId;
         this.amount = amount;
@@ -74,59 +56,19 @@ public class CreatePaymentRequest {
         this.amount = amount;
     }
 
-    public PaymentMethod getPaymentMethod() {
+    public String getPaymentMethod() {
         return paymentMethod;
     }
 
-    public void setPaymentMethod(PaymentMethod paymentMethod) {
+    public void setPaymentMethod(String paymentMethod) {
         this.paymentMethod = paymentMethod;
     }
 
-    public PaymentType getPaymentType() {
+    public String getPaymentType() {
         return paymentType;
     }
 
-    public void setPaymentType(PaymentType paymentType) {
+    public void setPaymentType(String paymentType) {
         this.paymentType = paymentType;
-    }
-
-    public String getCurrency() {
-        return currency;
-    }
-
-    public void setCurrency(String currency) {
-        this.currency = currency;
-    }
-
-    public String getDescription() {
-        return description;
-    }
-
-    public void setDescription(String description) {
-        this.description = description;
-    }
-
-    public Boolean getIsSplitPayment() {
-        return isSplitPayment;
-    }
-
-    public void setIsSplitPayment(Boolean isSplitPayment) {
-        this.isSplitPayment = isSplitPayment;
-    }
-
-    public String getGroupOrderId() {
-        return groupOrderId;
-    }
-
-    public void setGroupOrderId(String groupOrderId) {
-        this.groupOrderId = groupOrderId;
-    }
-
-    public Map<String, Double> getSplitDetails() {
-        return splitDetails;
-    }
-
-    public void setSplitDetails(Map<String, Double> splitDetails) {
-        this.splitDetails = splitDetails;
     }
 }

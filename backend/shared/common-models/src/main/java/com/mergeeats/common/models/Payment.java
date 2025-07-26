@@ -2,6 +2,7 @@ package com.mergeeats.common.models;
 
 import com.mergeeats.common.enums.PaymentStatus;
 import com.mergeeats.common.enums.PaymentMethod;
+import com.mergeeats.common.enums.PaymentType;
 import org.springframework.data.annotation.CreatedDate;
 import org.springframework.data.annotation.Id;
 import org.springframework.data.annotation.LastModifiedDate;
@@ -32,6 +33,9 @@ public class Payment {
 
     @NotNull(message = "Payment method is required")
     private PaymentMethod paymentMethod;
+
+    @NotNull(message = "Payment type is required")
+    private PaymentType paymentType = PaymentType.ORDER_PAYMENT;
 
     @NotNull(message = "Payment status is required")
     @Indexed
@@ -96,6 +100,8 @@ public class Payment {
     private String groupOrderId;
 
     private Double userShareAmount;
+    
+    private Map<String, Double> splitDetails; // userId -> amount
 
     // Receipt and invoice
     private String receiptUrl;
@@ -108,6 +114,25 @@ public class Payment {
     private String failureCode;
 
     private Integer retryCount = 0;
+    
+    private Integer maxRetries = 3;
+    
+    private LocalDateTime nextRetryAt;
+    
+    // Payment description
+    private String description;
+    
+    // Gateway fees and amounts
+    private Double gatewayFee = 0.0;
+    
+    private Double netAmount = 0.0;
+    
+    private String gatewayPaymentId;
+    
+    private String gatewayOrderId;
+    
+    // Refund tracking
+    private Double refundAmount = 0.0;
 
     // Additional metadata
     private Map<String, Object> metadata;
@@ -177,6 +202,14 @@ public class Payment {
 
     public void setPaymentMethod(PaymentMethod paymentMethod) {
         this.paymentMethod = paymentMethod;
+    }
+
+    public PaymentType getPaymentType() {
+        return paymentType;
+    }
+
+    public void setPaymentType(PaymentType paymentType) {
+        this.paymentType = paymentType;
     }
 
     public PaymentStatus getStatus() {
@@ -371,6 +404,14 @@ public class Payment {
         this.userShareAmount = userShareAmount;
     }
 
+    public Map<String, Double> getSplitDetails() {
+        return splitDetails;
+    }
+
+    public void setSplitDetails(Map<String, Double> splitDetails) {
+        this.splitDetails = splitDetails;
+    }
+
     public String getReceiptUrl() {
         return receiptUrl;
     }
@@ -467,6 +508,70 @@ public class Payment {
         this.updatedAt = updatedAt;
     }
 
+    public Integer getMaxRetries() {
+        return maxRetries;
+    }
+
+    public void setMaxRetries(Integer maxRetries) {
+        this.maxRetries = maxRetries;
+    }
+
+    public LocalDateTime getNextRetryAt() {
+        return nextRetryAt;
+    }
+
+    public void setNextRetryAt(LocalDateTime nextRetryAt) {
+        this.nextRetryAt = nextRetryAt;
+    }
+
+    public String getDescription() {
+        return description;
+    }
+
+    public void setDescription(String description) {
+        this.description = description;
+    }
+
+    public Double getGatewayFee() {
+        return gatewayFee;
+    }
+
+    public void setGatewayFee(Double gatewayFee) {
+        this.gatewayFee = gatewayFee;
+    }
+
+    public Double getNetAmount() {
+        return netAmount;
+    }
+
+    public void setNetAmount(Double netAmount) {
+        this.netAmount = netAmount;
+    }
+
+    public String getGatewayPaymentId() {
+        return gatewayPaymentId;
+    }
+
+    public void setGatewayPaymentId(String gatewayPaymentId) {
+        this.gatewayPaymentId = gatewayPaymentId;
+    }
+
+    public String getGatewayOrderId() {
+        return gatewayOrderId;
+    }
+
+    public void setGatewayOrderId(String gatewayOrderId) {
+        this.gatewayOrderId = gatewayOrderId;
+    }
+
+    public Double getRefundAmount() {
+        return refundAmount;
+    }
+
+    public void setRefundAmount(Double refundAmount) {
+        this.refundAmount = refundAmount;
+    }
+
     // Helper methods
     public boolean isCompleted() {
         return status == PaymentStatus.COMPLETED;
@@ -482,6 +587,18 @@ public class Payment {
 
     public void incrementRetryCount() {
         this.retryCount = (this.retryCount == null) ? 1 : this.retryCount + 1;
+    }
+
+    public boolean canRetry() {
+        return retryCount < maxRetries && (status == PaymentStatus.FAILED || status == PaymentStatus.PENDING);
+    }
+
+    public Double getRemainingRefundAmount() {
+        return amount - (refundAmount != null ? refundAmount : 0.0);
+    }
+
+    public boolean isFullyRefunded() {
+        return refundAmount != null && refundAmount.equals(amount);
     }
 
     public Double getTotalAmount() {

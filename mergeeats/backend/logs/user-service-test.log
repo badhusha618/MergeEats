@@ -1,0 +1,87 @@
+[[1;34mINFO[m] Scanning for projects...
+[[1;34mINFO[m] 
+[[1;34mINFO[m] [1m---------------------< [0;36mcom.mergeeats:user-service[0;1m >---------------------[m
+[[1;34mINFO[m] [1mBuilding MergeEats User Service 1.0.0[m
+[[1;34mINFO[m]   from pom.xml
+[[1;34mINFO[m] [1m--------------------------------[ jar ]---------------------------------[m
+[[1;34mINFO[m] 
+[[1;34mINFO[m] [1m>>> [0;32mspring-boot:3.2.0:run[m [1m(default-cli)[0;1m > [0;1mtest-compile[m @ [36muser-service[0;1m >>>[m
+[[1;34mINFO[m] 
+[[1;34mINFO[m] [1m--- [0;32mresources:3.3.1:resources[m [1m(default-resources)[m @ [36muser-service[0;1m ---[m
+[[1;34mINFO[m] Copying 1 resource from src/main/resources to target/classes
+[[1;34mINFO[m] 
+[[1;34mINFO[m] [1m--- [0;32mcompiler:3.11.0:compile[m [1m(default-compile)[m @ [36muser-service[0;1m ---[m
+[[1;34mINFO[m] Nothing to compile - all classes are up to date
+[[1;34mINFO[m] 
+[[1;34mINFO[m] [1m--- [0;32mresources:3.3.1:testResources[m [1m(default-testResources)[m @ [36muser-service[0;1m ---[m
+[[1;34mINFO[m] skip non existing resourceDirectory /workspace/mergeeats/backend/user-service/src/test/resources
+[[1;34mINFO[m] 
+[[1;34mINFO[m] [1m--- [0;32mcompiler:3.11.0:testCompile[m [1m(default-testCompile)[m @ [36muser-service[0;1m ---[m
+[[1;34mINFO[m] No sources to compile
+[[1;34mINFO[m] 
+[[1;34mINFO[m] [1m<<< [0;32mspring-boot:3.2.0:run[m [1m(default-cli)[0;1m < [0;1mtest-compile[m @ [36muser-service[0;1m <<<[m
+[[1;34mINFO[m] 
+[[1;34mINFO[m] 
+[[1;34mINFO[m] [1m--- [0;32mspring-boot:3.2.0:run[m [1m(default-cli)[m @ [36muser-service[0;1m ---[m
+[[1;34mINFO[m] Attaching agents: []
+
+  .   ____          _            __ _ _
+ /\\ / ___'_ __ _ _(_)_ __  __ _ \ \ \ \
+( ( )\___ | '_ | '_| | '_ \/ _` | \ \ \ \
+ \\/  ___)| |_)| | | | | || (_| |  ) ) ) )
+  '  |____| .__|_| |_|_| |_\__, | / / / /
+ =========|_|==============|___/=/_/_/_/
+ :: Spring Boot ::                (v3.2.0)
+
+2025-07-26T03:13:09.082Z  INFO 137778 --- [user-service] [           main] c.m.userservice.UserServiceApplication   : Starting UserServiceApplication using Java 21.0.7 with PID 137778 (/workspace/mergeeats/backend/user-service/target/classes started by ubuntu in /workspace/mergeeats/backend/user-service)
+2025-07-26T03:13:09.083Z DEBUG 137778 --- [user-service] [           main] c.m.userservice.UserServiceApplication   : Running with Spring Boot v3.2.0, Spring v6.1.1
+2025-07-26T03:13:09.083Z  INFO 137778 --- [user-service] [           main] c.m.userservice.UserServiceApplication   : No active profile set, falling back to 1 default profile: "default"
+2025-07-26T03:13:09.622Z  INFO 137778 --- [user-service] [           main] .s.d.r.c.RepositoryConfigurationDelegate : Bootstrapping Spring Data MongoDB repositories in DEFAULT mode.
+2025-07-26T03:13:09.646Z  INFO 137778 --- [user-service] [           main] .s.d.r.c.RepositoryConfigurationDelegate : Finished Spring Data repository scanning in 21 ms. Found 1 MongoDB repository interface.
+2025-07-26T03:13:09.752Z  INFO 137778 --- [user-service] [           main] o.s.cloud.context.scope.GenericScope     : BeanFactory id=a09345dd-be4a-3dfa-b4d0-3561a7e3f188
+2025-07-26T03:13:10.066Z  INFO 137778 --- [user-service] [           main] o.s.b.w.embedded.tomcat.TomcatWebServer  : Tomcat initialized with port 8081 (http)
+2025-07-26T03:13:10.071Z  INFO 137778 --- [user-service] [           main] o.apache.catalina.core.StandardService   : Starting service [Tomcat]
+2025-07-26T03:13:10.071Z  INFO 137778 --- [user-service] [           main] o.apache.catalina.core.StandardEngine    : Starting Servlet engine: [Apache Tomcat/10.1.16]
+2025-07-26T03:13:10.112Z  INFO 137778 --- [user-service] [           main] o.a.c.c.C.[.[localhost].[/api/users]     : Initializing Spring embedded WebApplicationContext
+2025-07-26T03:13:10.112Z  INFO 137778 --- [user-service] [           main] w.s.c.ServletWebServerApplicationContext : Root WebApplicationContext: initialization completed in 1003 ms
+2025-07-26T03:13:10.308Z  INFO 137778 --- [user-service] [           main] org.mongodb.driver.client                : MongoClient with metadata {"driver": {"name": "mongo-java-driver|sync|spring-boot", "version": "4.11.1"}, "os": {"type": "Linux", "name": "Linux", "architecture": "amd64", "version": "6.12.8+"}, "platform": "Java/Ubuntu/21.0.7+6-Ubuntu-0ubuntu125.04"} created with settings MongoClientSettings{readPreference=primary, writeConcern=WriteConcern{w=null, wTimeout=null ms, journal=null}, retryWrites=true, retryReads=true, readConcern=ReadConcern{level=null}, credential=null, transportSettings=null, streamFactoryFactory=null, commandListeners=[io.micrometer.core.instrument.binder.mongodb.MongoMetricsCommandListener@110620d], codecRegistry=ProvidersCodecRegistry{codecProviders=[ValueCodecProvider{}, BsonValueCodecProvider{}, DBRefCodecProvider{}, DBObjectCodecProvider{}, DocumentCodecProvider{}, CollectionCodecProvider{}, IterableCodecProvider{}, MapCodecProvider{}, GeoJsonCodecProvider{}, GridFSFileCodecProvider{}, Jsr310CodecProvider{}, JsonObjectCodecProvider{}, BsonCodecProvider{}, EnumCodecProvider{}, com.mongodb.client.model.mql.ExpressionCodecProvider@4f402027, com.mongodb.Jep395RecordCodecProvider@22aee519, com.mongodb.KotlinCodecProvider@7c226095]}, loggerSettings=LoggerSettings{maxDocumentLength=1000}, clusterSettings={hosts=[localhost:27017], srvServiceName=mongodb, mode=SINGLE, requiredClusterType=UNKNOWN, requiredReplicaSetName='null', serverSelector='null', clusterListeners='[]', serverSelectionTimeout='30000 ms', localThreshold='15 ms'}, socketSettings=SocketSettings{connectTimeoutMS=10000, readTimeoutMS=0, receiveBufferSize=0, proxySettings=ProxySettings{host=null, port=null, username=null, password=null}}, heartbeatSocketSettings=SocketSettings{connectTimeoutMS=10000, readTimeoutMS=10000, receiveBufferSize=0, proxySettings=ProxySettings{host=null, port=null, username=null, password=null}}, connectionPoolSettings=ConnectionPoolSettings{maxSize=100, minSize=0, maxWaitTimeMS=120000, maxConnectionLifeTimeMS=0, maxConnectionIdleTimeMS=0, maintenanceInitialDelayMS=0, maintenanceFrequencyMS=60000, connectionPoolListeners=[io.micrometer.core.instrument.binder.mongodb.MongoMetricsConnectionPoolListener@7ea07516], maxConnecting=2}, serverSettings=ServerSettings{heartbeatFrequencyMS=10000, minHeartbeatFrequencyMS=500, serverListeners='[]', serverMonitorListeners='[]'}, sslSettings=SslSettings{enabled=false, invalidHostNameAllowed=false, context=null}, applicationName='null', compressorList=[], uuidRepresentation=JAVA_LEGACY, serverApi=null, autoEncryptionSettings=null, dnsClient=null, inetAddressResolver=null, contextProvider=null}
+2025-07-26T03:13:10.320Z  INFO 137778 --- [user-service] [localhost:27017] org.mongodb.driver.cluster               : Monitor thread successfully connected to server with description ServerDescription{address=localhost:27017, type=STANDALONE, state=CONNECTED, ok=true, minWireVersion=0, maxWireVersion=25, maxDocumentSize=16777216, logicalSessionTimeoutMinutes=30, roundTripTimeNanos=9778173}
+2025-07-26T03:13:10.761Z  WARN 137778 --- [user-service] [           main] .s.s.UserDetailsServiceAutoConfiguration : 
+
+Using generated security password: a785ea1a-817b-40e6-8a7f-27e11a513c69
+
+This generated password is for development use only. Your security configuration must be updated before running your application in production.
+
+2025-07-26T03:13:11.012Z  INFO 137778 --- [user-service] [           main] o.s.b.a.e.web.EndpointLinksResolver      : Exposing 3 endpoint(s) beneath base path '/actuator'
+2025-07-26T03:13:11.046Z  INFO 137778 --- [user-service] [           main] o.s.s.web.DefaultSecurityFilterChain     : Will secure any request with [org.springframework.security.web.session.DisableEncodeUrlFilter@1b06dc57, org.springframework.security.web.context.request.async.WebAsyncManagerIntegrationFilter@5af641d3, org.springframework.security.web.context.SecurityContextHolderFilter@2245ccaa, org.springframework.security.web.header.HeaderWriterFilter@2761156e, org.springframework.web.filter.CorsFilter@14e83c9d, org.springframework.security.web.authentication.logout.LogoutFilter@1eab0700, org.springframework.security.web.savedrequest.RequestCacheAwareFilter@3e18e693, org.springframework.security.web.servletapi.SecurityContextHolderAwareRequestFilter@50d4775b, org.springframework.security.web.authentication.AnonymousAuthenticationFilter@744db9fb, org.springframework.security.web.session.SessionManagementFilter@5c78f456, org.springframework.security.web.access.ExceptionTranslationFilter@25d23478, org.springframework.security.web.access.intercept.AuthorizationFilter@7535307c]
+2025-07-26T03:13:11.403Z  WARN 137778 --- [user-service] [           main] ConfigServletWebServerApplicationContext : Exception encountered during context initialization - cancelling refresh attempt: org.springframework.context.ApplicationContextException: Failed to start bean 'webServerStartStop'
+2025-07-26T03:13:11.419Z  INFO 137778 --- [user-service] [           main] .s.b.a.l.ConditionEvaluationReportLogger : 
+
+Error starting ApplicationContext. To display the condition evaluation report re-run your application with 'debug' enabled.
+2025-07-26T03:13:11.426Z ERROR 137778 --- [user-service] [           main] o.s.b.d.LoggingFailureAnalysisReporter   : 
+
+***************************
+APPLICATION FAILED TO START
+***************************
+
+Description:
+
+Web server failed to start. Port 8081 was already in use.
+
+Action:
+
+Identify and stop the process that's listening on port 8081 or configure this application to listen on another port.
+
+[[1;34mINFO[m] [1m------------------------------------------------------------------------[m
+[[1;34mINFO[m] [1;31mBUILD FAILURE[m
+[[1;34mINFO[m] [1m------------------------------------------------------------------------[m
+[[1;34mINFO[m] Total time:  3.461 s
+[[1;34mINFO[m] Finished at: 2025-07-26T03:13:11Z
+[[1;34mINFO[m] [1m------------------------------------------------------------------------[m
+[[1;31mERROR[m] Failed to execute goal [32morg.springframework.boot:spring-boot-maven-plugin:3.2.0:run[m [1m(default-cli)[m on project [36muser-service[m: [1;31mProcess terminated with exit code: 1[m -> [1m[Help 1][m
+[[1;31mERROR[m] 
+[[1;31mERROR[m] To see the full stack trace of the errors, re-run Maven with the [1m-e[m switch.
+[[1;31mERROR[m] Re-run Maven using the [1m-X[m switch to enable full debug logging.
+[[1;31mERROR[m] 
+[[1;31mERROR[m] For more information about the errors and possible solutions, please read the following articles:
+[[1;31mERROR[m] [1m[Help 1][m http://cwiki.apache.org/confluence/display/MAVEN/MojoExecutionException
