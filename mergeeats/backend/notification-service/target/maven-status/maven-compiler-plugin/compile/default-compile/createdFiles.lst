@@ -1,2 +1,5 @@
-com/mergeeats/notificationservice/repository/NotificationRepository.class
+com/mergeeats/notificationservice/controller/NotificationController.class
+com/mergeeats/notificationservice/NotificationServiceApplication.class
+com/mergeeats/notificationservice/service/NotificationService.class
 com/mergeeats/notificationservice/dto/CreateNotificationRequest.class
+com/mergeeats/notificationservice/repository/NotificationRepository.class
