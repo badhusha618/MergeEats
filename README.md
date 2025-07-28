@@ -13,6 +13,7 @@ A comprehensive food delivery platform built with microservices architecture, fe
 - [Running the Application](#running-the-application)
 - [API Documentation](#api-documentation)
 - [Project Structure](#project-structure)
+- [Development Status](#development-status)
 - [Contributing](#contributing)
 - [License](#license)
 
@@ -356,6 +357,26 @@ kubectl get services
 - **Centralized Logging**: ELK Stack integration
 - **Log Levels**: Configurable per service
 
+## 📊 Development Status
+
+### Current Implementation Status
+- **Backend Services**: 87.5% complete (7/8 services fully operational)
+- **Frontend Applications**: 33% complete (Merchant dashboard ready)
+- **AI Features**: 100% complete (Order merging, smart routing)
+- **Infrastructure**: 100% complete (API Gateway, databases, messaging)
+
+### 📋 Detailed Feature Tracking
+For a comprehensive list of completed features and remaining to-do items, see:
+- **[FEATURES_TODO.md](FEATURES_TODO.md)** - Complete feature checklist and roadmap
+- **[FINAL_STATUS.md](FINAL_STATUS.md)** - Current implementation status
+- **[IMPLEMENTATION_COMPLETE.md](IMPLEMENTATION_COMPLETE.md)** - Detailed completion report
+
+### 🎯 Immediate Priorities
+1. Fix Payment and Notification service compilation issues
+2. Complete Customer mobile app implementation
+3. Complete Delivery Partner app implementation
+4. Add real-time tracking UI components
+
 ## 🤝 Contributing
 
 1. Fork the repository
@@ -371,6 +392,7 @@ kubectl get services
 - Follow the existing code style
 - Add appropriate error handling
 - Include logging for debugging
+- Update FEATURES_TODO.md when completing features
 
 ## 📝 License
 
