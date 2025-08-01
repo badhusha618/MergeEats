@@ -1,5 +1,6 @@
 package com.mergeeats.orderservice.dto;
 
+import com.mergeeats.common.models.Address;
 import com.mergeeats.common.models.OrderItem;
 import io.swagger.v3.oas.annotations.media.Schema;
 import jakarta.validation.constraints.NotEmpty;
@@ -19,8 +20,7 @@ public class CreateOrderRequest {
 
     @Schema(example = "123 Main St, City, State 12345")
     @NotNull(message = "Delivery address is required")
-    @Size(max = 500, message = "Delivery address cannot exceed 500 characters")
-    private String deliveryAddress;
+    private Address deliveryAddress;
 
     @Schema(example = "Please deliver to the front door")
     @Size(max = 200, message = "Special instructions cannot exceed 200 characters")
@@ -34,6 +34,12 @@ public class CreateOrderRequest {
     @NotEmpty(message = "Order items are required")
     private List<OrderItem> items;
 
+    @Schema(example = "false")
+    private boolean isGroupOrder;
+
+    @Schema(example = "group_order_123")
+    private String groupOrderId;
+
     // Constructors
     public CreateOrderRequest() {}
 
@@ -42,6 +48,18 @@ public class CreateOrderRequest {
         this.restaurantId = restaurantId;
         this.items = items;
         this.deliveryAddress = deliveryAddress;
+    }
+
+    public CreateOrderRequest(String userId, String restaurantId, List<OrderItem> items, Address deliveryAddress, 
+                            String specialInstructions, String paymentMethod, boolean isGroupOrder, String groupOrderId) {
+        this.userId = userId;
+        this.restaurantId = restaurantId;
+        this.items = items;
+        this.deliveryAddress = deliveryAddress;
+        this.specialInstructions = specialInstructions;
+        this.paymentMethod = paymentMethod;
+        this.isGroupOrder = isGroupOrder;
+        this.groupOrderId = groupOrderId;
     }
 
     // Getters and Setters
@@ -85,12 +103,20 @@ public class CreateOrderRequest {
         this.specialInstructions = specialInstructions;
     }
 
+    public String getPaymentMethod() {
+        return paymentMethod;
+    }
+
+    public void setPaymentMethod(String paymentMethod) {
+        this.paymentMethod = paymentMethod;
+    }
+
     public boolean isGroupOrder() {
         return isGroupOrder;
     }
 
     public void setGroupOrder(boolean groupOrder) {
-        isGroupOrder = groupOrder;
+        this.isGroupOrder = groupOrder;
     }
 
     public String getGroupOrderId() {

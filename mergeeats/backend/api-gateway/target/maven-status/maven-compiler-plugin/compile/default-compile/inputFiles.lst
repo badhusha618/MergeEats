@@ -1,1 +1,4 @@
+/workspace/mergeeats/backend/api-gateway/src/main/java/com/mergeeats/apigateway/filter/AuthenticationFilter.java
 /workspace/mergeeats/backend/api-gateway/src/main/java/com/mergeeats/apigateway/ApiGatewayApplication.java
+/workspace/mergeeats/backend/api-gateway/src/main/java/com/mergeeats/apigateway/config/GatewayConfig.java
+/workspace/mergeeats/backend/api-gateway/src/main/java/com/mergeeats/apigateway/filter/RateLimitingFilter.java

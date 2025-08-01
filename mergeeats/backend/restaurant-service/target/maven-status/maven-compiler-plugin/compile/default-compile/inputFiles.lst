@@ -1,0 +1,8 @@
+/workspace/mergeeats/backend/restaurant-service/src/main/java/com/mergeeats/restaurantservice/dto/CreateRestaurantRequest.java
+/workspace/mergeeats/backend/restaurant-service/src/main/java/com/mergeeats/restaurantservice/dto/MenuItemRequest.java
+/workspace/mergeeats/backend/restaurant-service/src/main/java/com/mergeeats/restaurantservice/service/RestaurantService.java
+/workspace/mergeeats/backend/restaurant-service/src/main/java/com/mergeeats/restaurantservice/controller/RestaurantController.java
+/workspace/mergeeats/backend/restaurant-service/src/main/java/com/mergeeats/restaurantservice/repository/RestaurantRepository.java
+/workspace/mergeeats/backend/restaurant-service/src/main/java/com/mergeeats/restaurantservice/RestaurantServiceApplication.java
+/workspace/mergeeats/backend/restaurant-service/src/main/java/com/mergeeats/restaurantservice/dto/UpdateRestaurantRequest.java
+/workspace/mergeeats/backend/restaurant-service/src/main/java/com/mergeeats/restaurantservice/config/OpenApiConfig.java

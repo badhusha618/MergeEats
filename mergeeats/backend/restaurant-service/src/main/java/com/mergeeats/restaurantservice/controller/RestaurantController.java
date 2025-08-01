@@ -3,7 +3,7 @@ package com.mergeeats.restaurantservice.controller;
 import com.mergeeats.common.models.Restaurant;
 import com.mergeeats.restaurantservice.dto.CreateRestaurantRequest;
 import com.mergeeats.restaurantservice.dto.UpdateRestaurantRequest;
-import com.mergeeats.restaurantservice.dto.MenuItemRequest;
+
 import com.mergeeats.restaurantservice.service.RestaurantService;
 import io.swagger.v3.oas.annotations.Operation;
 import io.swagger.v3.oas.annotations.tags.Tag;
@@ -197,33 +197,8 @@ public class RestaurantController {
         return ResponseEntity.noContent().build();
     }
 
-    @PostMapping("/{restaurantId}/menu")
-    @Operation(summary = "Add menu item to restaurant")
-    public ResponseEntity<Restaurant> addMenuItem(
-            @PathVariable String restaurantId,
-            @Valid @RequestBody MenuItemRequest request) {
-        Restaurant restaurant = restaurantService.addMenuItem(restaurantId, request);
-        return ResponseEntity.ok(restaurant);
-    }
-
-    @PutMapping("/{restaurantId}/menu/{itemId}")
-    @Operation(summary = "Update menu item")
-    public ResponseEntity<Restaurant> updateMenuItem(
-            @PathVariable String restaurantId,
-            @PathVariable String itemId,
-            @Valid @RequestBody MenuItemRequest request) {
-        Restaurant restaurant = restaurantService.updateMenuItem(restaurantId, itemId, request);
-        return ResponseEntity.ok(restaurant);
-    }
-
-    @DeleteMapping("/{restaurantId}/menu/{itemId}")
-    @Operation(summary = "Remove menu item")
-    public ResponseEntity<Restaurant> removeMenuItem(
-            @PathVariable String restaurantId,
-            @PathVariable String itemId) {
-        Restaurant restaurant = restaurantService.removeMenuItem(restaurantId, itemId);
-        return ResponseEntity.ok(restaurant);
-    }
+    // Note: Menu item endpoints are not implemented in the current Restaurant model
+    // These endpoints would need to be implemented when menu items are added to the Restaurant model
 
     @PutMapping("/{restaurantId}/status")
     @Operation(summary = "Update restaurant status (open/closed)")

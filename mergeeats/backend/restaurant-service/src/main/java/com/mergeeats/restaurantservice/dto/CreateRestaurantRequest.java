@@ -74,11 +74,16 @@ public class CreateRestaurantRequest {
     }
 
     public Address getAddress() {
-        return new Address(address, latitude, longitude);
+        // Create a proper Address object with all required fields
+        Address addr = new Address();
+        addr.setStreet(address);
+        addr.setLatitude(latitude);
+        addr.setLongitude(longitude);
+        return addr;
     }
 
     public void setAddress(Address address) {
-        this.address = address.getAddress();
+        this.address = address.getStreet();
         this.latitude = address.getLatitude();
         this.longitude = address.getLongitude();
     }

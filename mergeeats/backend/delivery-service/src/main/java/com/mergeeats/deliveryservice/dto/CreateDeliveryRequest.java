@@ -21,12 +21,14 @@ public class CreateDeliveryRequest {
     private String restaurantId;
 
     @Schema(example = "123 Main St, City, State 12345")
-    @NotBlank(message = "Pickup address is required")
-    private String pickupAddress;
+    @NotNull(message = "Pickup address is required")
+    @Valid
+    private Address pickupAddress;
 
     @Schema(example = "456 Oak Ave, City, State 12345")
-    @NotBlank(message = "Delivery address is required")
-    private String deliveryAddress;
+    @NotNull(message = "Delivery address is required")
+    @Valid
+    private Address deliveryAddress;
 
     @Schema(example = "40.7128")
     @NotNull(message = "Pickup latitude is required")

@@ -1,1 +1,4 @@
+com/mergeeats/apigateway/config/GatewayConfig.class
+com/mergeeats/apigateway/filter/AuthenticationFilter.class
+com/mergeeats/apigateway/filter/RateLimitingFilter.class
 com/mergeeats/apigateway/ApiGatewayApplication.class
