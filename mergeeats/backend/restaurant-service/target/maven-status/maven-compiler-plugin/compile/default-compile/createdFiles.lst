@@ -1,0 +1,8 @@
+com/mergeeats/restaurantservice/controller/RestaurantController.class
+com/mergeeats/restaurantservice/dto/CreateRestaurantRequest.class
+com/mergeeats/restaurantservice/service/RestaurantService.class
+com/mergeeats/restaurantservice/RestaurantServiceApplication.class
+com/mergeeats/restaurantservice/repository/RestaurantRepository.class
+com/mergeeats/restaurantservice/config/OpenApiConfig.class
+com/mergeeats/restaurantservice/dto/MenuItemRequest.class
+com/mergeeats/restaurantservice/dto/UpdateRestaurantRequest.class

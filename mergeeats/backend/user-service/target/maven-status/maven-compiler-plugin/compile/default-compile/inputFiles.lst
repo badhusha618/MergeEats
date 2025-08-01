@@ -1,6 +1,7 @@
 /workspace/mergeeats/backend/user-service/src/main/java/com/mergeeats/userservice/repository/UserRepository.java
 /workspace/mergeeats/backend/user-service/src/main/java/com/mergeeats/userservice/UserServiceApplication.java
 /workspace/mergeeats/backend/user-service/src/main/java/com/mergeeats/userservice/security/JwtUtil.java
+/workspace/mergeeats/backend/user-service/src/main/java/com/mergeeats/userservice/config/OpenApiConfig.java
 /workspace/mergeeats/backend/user-service/src/main/java/com/mergeeats/userservice/config/SecurityConfig.java
 /workspace/mergeeats/backend/user-service/src/main/java/com/mergeeats/userservice/service/UserService.java
 /workspace/mergeeats/backend/user-service/src/main/java/com/mergeeats/userservice/dto/LoginRequest.java

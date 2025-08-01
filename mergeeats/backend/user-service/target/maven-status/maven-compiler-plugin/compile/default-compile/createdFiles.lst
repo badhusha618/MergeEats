@@ -1,5 +1,6 @@
 com/mergeeats/userservice/dto/LoginRequest.class
 com/mergeeats/userservice/UserServiceApplication.class
+com/mergeeats/userservice/config/OpenApiConfig.class
 com/mergeeats/userservice/controller/UserController.class
 com/mergeeats/userservice/dto/AuthResponse.class
 com/mergeeats/userservice/config/SecurityConfig.class

@@ -4,6 +4,7 @@
 /workspace/mergeeats/backend/delivery-service/src/main/java/com/mergeeats/deliveryservice/controller/DeliveryController.java
 /workspace/mergeeats/backend/delivery-service/src/main/java/com/mergeeats/deliveryservice/dto/UpdateLocationRequest.java
 /workspace/mergeeats/backend/delivery-service/src/main/java/com/mergeeats/deliveryservice/dto/LocationUpdateRequest.java
+/workspace/mergeeats/backend/delivery-service/src/main/java/com/mergeeats/deliveryservice/config/OpenApiConfig.java
 /workspace/mergeeats/backend/delivery-service/src/main/java/com/mergeeats/deliveryservice/controller/DeliveryPartnerController.java
 /workspace/mergeeats/backend/delivery-service/src/main/java/com/mergeeats/deliveryservice/service/DeliveryService.java
 /workspace/mergeeats/backend/delivery-service/src/main/java/com/mergeeats/deliveryservice/dto/AssignDeliveryRequest.java
@@ -11,3 +12,4 @@
 /workspace/mergeeats/backend/delivery-service/src/main/java/com/mergeeats/deliveryservice/dto/CreateDeliveryRequest.java
 /workspace/mergeeats/backend/delivery-service/src/main/java/com/mergeeats/deliveryservice/repository/DeliveryPartnerRepository.java
 /workspace/mergeeats/backend/delivery-service/src/main/java/com/mergeeats/deliveryservice/dto/CreateDeliveryPartnerRequest.java
+/workspace/mergeeats/backend/delivery-service/src/main/java/com/mergeeats/deliveryservice/config/WebSocketConfig.java

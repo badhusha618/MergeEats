@@ -22,15 +22,15 @@
     </properties>
 
     <modules>
-        <module>backend/shared/common-models</module>
-        <module>backend/api-gateway</module>
-        <module>backend/user-service</module>
-        <module>backend/order-service</module>
-        <module>backend/restaurant-service</module>
-        <module>backend/delivery-service</module>
+        <module>mergeeats/backend/shared/common-models</module>
+        <module>mergeeats/backend/api-gateway</module>
+        <module>mergeeats/backend/user-service</module>
+        <module>mergeeats/backend/order-service</module>
+        <module>mergeeats/backend/restaurant-service</module>
+        <module>mergeeats/backend/delivery-service</module>
         <!-- Temporarily excluded due to compilation issues:
-        <module>backend/payment-service</module>
-        <module>backend/notification-service</module>
+        <module>mergeeats/backend/payment-service</module>
+        <module>mergeeats/backend/notification-service</module>
         -->
     </modules>
 

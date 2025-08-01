@@ -9,6 +9,7 @@ com/mergeeats/deliveryservice/controller/DeliveryController.class
 com/mergeeats/deliveryservice/dto/CreateDeliveryPartnerRequest.class
 com/mergeeats/deliveryservice/service/DeliveryPartnerService$1.class
 com/mergeeats/deliveryservice/repository/DeliveryRepository.class
+com/mergeeats/deliveryservice/config/OpenApiConfig.class
 com/mergeeats/deliveryservice/service/DeliveryPartnerService$2.class
 com/mergeeats/deliveryservice/service/DeliveryPartnerService$6.class
 com/mergeeats/deliveryservice/service/DeliveryPartnerService$7.class
